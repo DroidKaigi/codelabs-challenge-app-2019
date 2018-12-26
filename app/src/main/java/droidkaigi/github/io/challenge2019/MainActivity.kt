@@ -3,6 +3,7 @@ package droidkaigi.github.io.challenge2019
 import android.os.AsyncTask
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
+import android.support.v7.widget.DividerItemDecoration
 import android.support.v7.widget.RecyclerView
 import droidkaigi.github.io.challenge2019.data.api.HackerNewsApi
 import droidkaigi.github.io.challenge2019.data.api.ItemAdapter
@@ -21,7 +22,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var viewAdapter: RecyclerView.Adapter<*>
     private lateinit var hackerNewsApi: HackerNewsApi
 
-    private var getItemTask: GetItemsTask? = null
+    private var getItemsTask: GetItemsTask? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -35,6 +36,8 @@ class MainActivity : AppCompatActivity() {
         hackerNewsApi = retrofit.create(HackerNewsApi::class.java)
 
         recyclerView = findViewById(R.id.item_recycler)
+        val itemDecoration = DividerItemDecoration(recyclerView.context, DividerItemDecoration.VERTICAL)
+        recyclerView.addItemDecoration(itemDecoration)
 
         hackerNewsApi.getTopStories().enqueue(object : Callback<List<Long>> {
 
@@ -42,14 +45,12 @@ class MainActivity : AppCompatActivity() {
                 if (!response.isSuccessful) return
 
                 response.body()?.let { itemIds ->
-                    getItemTask = GetItemsTask(hackerNewsApi) { items ->
+                    getItemsTask = GetItemsTask(hackerNewsApi) { items ->
                         viewAdapter = ItemAdapter(items)
-                        runOnUiThread {
-                            recyclerView.adapter = viewAdapter
-                        }
+                        recyclerView.adapter = viewAdapter
                     }
 
-                    getItemTask?.execute(*itemIds.take(20).toTypedArray())
+                    getItemsTask?.execute(*itemIds.take(20).toTypedArray())
                 }
             }
 
@@ -61,7 +62,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        getItemTask?.run {
+        getItemsTask?.run {
             if (!isCancelled) cancel(true)
         }
     }

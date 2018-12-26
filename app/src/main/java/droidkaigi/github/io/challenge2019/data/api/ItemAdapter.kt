@@ -21,8 +21,6 @@ class ItemAdapter(
     override fun getItemCount(): Int = items.size
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        holder.binding.apply {
-            title.text = items[position]?.title
-        }
+        holder.binding.item = items[position]
     }
 }
