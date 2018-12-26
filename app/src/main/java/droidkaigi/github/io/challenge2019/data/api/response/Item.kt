@@ -34,7 +34,7 @@ data class Item(
     @Json(name = "parts")
     val parts: List<Long> = emptyList(),
     @Json(name = "descendants")
-    val descendants: Int
+    val descendants: Int = 0
 ) {
     companion object {
         const val NO_ID = -1L

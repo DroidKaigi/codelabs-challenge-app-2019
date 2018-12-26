@@ -6,7 +6,7 @@ import retrofit2.Call
 import retrofit2.http.GET
 import retrofit2.http.Path
 
-interface HackerNewsAPI {
+interface HackerNewsApi {
     @GET("item/{id}.json")
     fun getItem(@Path("id") id: Long): Call<Item>
 
