@@ -35,7 +35,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var storyAdapter: StoryAdapter
     private lateinit var hackerNewsApi: HackerNewsApi
 
-    private var getItemsTask: AsyncTask<Long, Unit, List<Item?>>? = null
+    private var getStoriesTask: AsyncTask<Long, Unit, List<Item?>>? = null
     private val moshi = Moshi.Builder().build()
     private val itemJsonAdapter = moshi.adapter(Item::class.java)
     private val itemsJsonAdapter =
@@ -92,7 +92,7 @@ class MainActivity : AppCompatActivity() {
                 if (!response.isSuccessful) return
 
                 response.body()?.let { itemIds ->
-                    getItemsTask = @SuppressLint("StaticFieldLeak") object : AsyncTask<Long, Unit, List<Item?>>() {
+                    getStoriesTask = @SuppressLint("StaticFieldLeak") object : AsyncTask<Long, Unit, List<Item?>>() {
 
                         override fun doInBackground(vararg itemIds: Long?): List<Item?> {
                             val ids = itemIds.mapNotNull { it }
@@ -129,7 +129,7 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
 
-                    getItemsTask?.execute(*itemIds.take(20).toTypedArray())
+                    getStoriesTask?.execute(*itemIds.take(20).toTypedArray())
                 }
             }
 
@@ -149,7 +149,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        getItemsTask?.run {
+        getStoriesTask?.run {
             if (!isCancelled) cancel(true)
         }
     }
