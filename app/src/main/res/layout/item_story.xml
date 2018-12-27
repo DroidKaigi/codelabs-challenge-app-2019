@@ -46,7 +46,7 @@
         />
 
         <TextView
-                android:id="@+id/hoge"
+                android:id="@+id/points_and_author"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:textAppearance="@style/TextAppearance.AppCompat.Caption"

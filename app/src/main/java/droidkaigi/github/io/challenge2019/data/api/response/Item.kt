@@ -6,15 +6,15 @@ import com.squareup.moshi.JsonClass
 @JsonClass(generateAdapter = true)
 data class Item(
     @Json(name = "id")
-    val id: Long,
+    val id: Long = NO_ID,
     @Json(name = "deleted")
     val deleted: Boolean = false,
     @Json(name = "type")
-    val type: String,
+    val type: String = "",
     @Json(name = "by")
     val author: String,
     @Json(name = "time")
-    val time: Long,
+    val time: Long = 0L,
     @Json(name = "text")
     val text: String = "",
     @Json(name = "dead")
@@ -26,11 +26,11 @@ data class Item(
     @Json(name = "kids")
     val kids: List<Long> = emptyList(),
     @Json(name = "url")
-    val url: String,
+    val url: String = "",
     @Json(name = "score")
     val score: Int = 0,
     @Json(name = "title")
-    val title: String,
+    val title: String = "",
     @Json(name = "parts")
     val parts: List<Long> = emptyList(),
     @Json(name = "descendants")

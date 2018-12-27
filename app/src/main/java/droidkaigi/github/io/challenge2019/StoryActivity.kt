@@ -1,11 +1,11 @@
 package droidkaigi.github.io.challenge2019
 
-import android.content.Intent
 import android.os.AsyncTask
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.DividerItemDecoration
 import android.support.v7.widget.RecyclerView
+import android.webkit.WebView
 import com.squareup.moshi.Moshi
 import droidkaigi.github.io.challenge2019.data.api.HackerNewsApi
 import droidkaigi.github.io.challenge2019.data.api.response.Item
@@ -17,19 +17,27 @@ import retrofit2.converter.moshi.MoshiConverterFactory
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CountDownLatch
 
-class MainActivity : AppCompatActivity() {
+class StoryActivity : AppCompatActivity() {
 
+    companion object {
+        const val EXTRA_ITEM_JSON = "droidkaigi.github.io.challenge2019.EXTRA_ITEM_JSON"
+    }
+
+    private lateinit var webView: WebView
     private lateinit var recyclerView: RecyclerView
     private lateinit var viewAdapter: RecyclerView.Adapter<*>
     private lateinit var hackerNewsApi: HackerNewsApi
 
-    private var getItemsTask: GetItemsTask? = null
     private val moshi = Moshi.Builder().build()
     private val itemJsonAdapter = moshi.adapter(Item::class.java)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+        setContentView(R.layout.activity_story)
+
+        val item = intent.getStringExtra(EXTRA_ITEM_JSON)?.let {
+            itemJsonAdapter.fromJson(it)
+        }
 
         val retrofit = Retrofit.Builder()
             .baseUrl("https://hacker-news.firebaseio.com/v0/")
@@ -38,42 +46,23 @@ class MainActivity : AppCompatActivity() {
 
         hackerNewsApi = retrofit.create(HackerNewsApi::class.java)
 
-        recyclerView = findViewById(R.id.item_recycler)
+        recyclerView = findViewById(R.id.comment_recycler)
         val itemDecoration = DividerItemDecoration(recyclerView.context, DividerItemDecoration.VERTICAL)
         recyclerView.addItemDecoration(itemDecoration)
 
-        hackerNewsApi.getTopStories().enqueue(object : Callback<List<Long>> {
+        webView = findViewById(R.id.web_view)
 
-            override fun onResponse(call: Call<List<Long>>, response: Response<List<Long>>) {
-                if (!response.isSuccessful) return
+        if (item == null) return
 
-                response.body()?.let { itemIds ->
-                    getItemsTask = GetItemsTask(hackerNewsApi) { items ->
-                        viewAdapter = StoryAdapter(items) { item ->
-                            val itemJson = itemJsonAdapter.toJson(item)
-                            val intent = Intent(this@MainActivity, StoryActivity::class.java).apply {
-                                putExtra(StoryActivity.EXTRA_ITEM_JSON, itemJson)
-                            }
-                            startActivity(intent)
-                        }
-                        recyclerView.adapter = viewAdapter
-                    }
+        webView.loadUrl(item.url)
 
-                    getItemsTask?.execute(*itemIds.take(20).toTypedArray())
-                }
-            }
-
-            override fun onFailure(call: Call<List<Long>>, t: Throwable) {
-
-            }
-        })
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        getItemsTask?.run {
-            if (!isCancelled) cancel(true)
+        val task = GetItemsTask(hackerNewsApi) { items ->
+            viewAdapter = CommentAdapter(items)
+            recyclerView.adapter = viewAdapter
         }
+
+        // TODO: Support Thread Comments
+        task.execute(*item.kids.toTypedArray())
     }
 
     class GetItemsTask(
