@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.AsyncTask
 import android.os.Bundle
+import android.support.v4.widget.SwipeRefreshLayout
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.DividerItemDecoration
 import android.support.v7.widget.RecyclerView
@@ -29,6 +30,7 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var recyclerView: RecyclerView
     private lateinit var progressView: ProgressBar
+    private lateinit var swipeRefreshLayout: SwipeRefreshLayout
 
     private lateinit var storyAdapter: StoryAdapter
     private lateinit var hackerNewsApi: HackerNewsApi
@@ -45,6 +47,7 @@ class MainActivity : AppCompatActivity() {
 
         recyclerView = findViewById(R.id.item_recycler)
         progressView = findViewById(R.id.progress)
+        swipeRefreshLayout = findViewById(R.id.swipe_refresh)
 
         val retrofit = Retrofit.Builder()
             .baseUrl("https://hacker-news.firebaseio.com/v0/")
@@ -64,6 +67,8 @@ class MainActivity : AppCompatActivity() {
         }
         recyclerView.adapter = storyAdapter
 
+        swipeRefreshLayout.setOnRefreshListener { loadTopStories() }
+
         val savedStories = savedInstanceState?.let { bundle ->
             bundle.getString(STATE_STORIES)?.let { itemsJson ->
                 itemsJsonAdapter.fromJson(itemsJson)
@@ -77,6 +82,10 @@ class MainActivity : AppCompatActivity() {
         }
 
         progressView.visibility = View.VISIBLE
+        loadTopStories()
+    }
+
+    private fun loadTopStories() {
         hackerNewsApi.getTopStories().enqueue(object : Callback<List<Long>> {
 
             override fun onResponse(call: Call<List<Long>>, response: Response<List<Long>>) {
@@ -114,6 +123,7 @@ class MainActivity : AppCompatActivity() {
 
                         override fun onPostExecute(items: List<Item?>) {
                             progressView.visibility = View.GONE
+                            swipeRefreshLayout.isRefreshing = false
                             storyAdapter.stories = items
                             storyAdapter.notifyDataSetChanged()
                         }
