@@ -7,6 +7,8 @@ import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.DividerItemDecoration
 import android.support.v7.widget.RecyclerView
+import android.view.View
+import android.widget.ProgressBar
 import com.squareup.moshi.Moshi
 import droidkaigi.github.io.challenge2019.data.api.HackerNewsApi
 import droidkaigi.github.io.challenge2019.data.api.response.Item
@@ -21,6 +23,7 @@ import java.util.concurrent.CountDownLatch
 class MainActivity : AppCompatActivity() {
 
     private lateinit var recyclerView: RecyclerView
+    private lateinit var progressView: ProgressBar
     private lateinit var viewAdapter: RecyclerView.Adapter<*>
     private lateinit var hackerNewsApi: HackerNewsApi
 
@@ -32,6 +35,9 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        recyclerView = findViewById(R.id.item_recycler)
+        progressView = findViewById(R.id.progress)
+
         val retrofit = Retrofit.Builder()
             .baseUrl("https://hacker-news.firebaseio.com/v0/")
             .addConverterFactory(MoshiConverterFactory.create())
@@ -39,10 +45,10 @@ class MainActivity : AppCompatActivity() {
 
         hackerNewsApi = retrofit.create(HackerNewsApi::class.java)
 
-        recyclerView = findViewById(R.id.item_recycler)
         val itemDecoration = DividerItemDecoration(recyclerView.context, DividerItemDecoration.VERTICAL)
         recyclerView.addItemDecoration(itemDecoration)
 
+        progressView.visibility = View.VISIBLE
         hackerNewsApi.getTopStories().enqueue(object : Callback<List<Long>> {
 
             override fun onResponse(call: Call<List<Long>>, response: Response<List<Long>>) {
@@ -50,6 +56,7 @@ class MainActivity : AppCompatActivity() {
 
                 response.body()?.let { itemIds ->
                     getItemsTask = @SuppressLint("StaticFieldLeak") object: AsyncTask<Long, Unit, List<Item?>>() {
+
                         override fun doInBackground(vararg itemIds: Long?): List<Item?> {
                             val ids = itemIds.mapNotNull { it }
                             val itemMap = ConcurrentHashMap<Long, Item?>()
@@ -78,6 +85,7 @@ class MainActivity : AppCompatActivity() {
                         }
 
                         override fun onPostExecute(items: List<Item?>) {
+                            progressView.visibility = View.GONE
                             viewAdapter = StoryAdapter(items) { item ->
                                 val itemJson = itemJsonAdapter.toJson(item)
                                 val intent = Intent(this@MainActivity, StoryActivity::class.java).apply {

@@ -6,7 +6,12 @@ import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.DividerItemDecoration
 import android.support.v7.widget.RecyclerView
+import android.view.View
+import android.webkit.WebResourceError
+import android.webkit.WebResourceRequest
 import android.webkit.WebView
+import android.webkit.WebViewClient
+import android.widget.ProgressBar
 import com.squareup.moshi.Moshi
 import droidkaigi.github.io.challenge2019.data.api.HackerNewsApi
 import droidkaigi.github.io.challenge2019.data.api.response.Item
@@ -26,16 +31,23 @@ class StoryActivity : AppCompatActivity() {
 
     private lateinit var webView: WebView
     private lateinit var recyclerView: RecyclerView
+    private lateinit var progressView: ProgressBar
+
     private lateinit var viewAdapter: RecyclerView.Adapter<*>
     private lateinit var hackerNewsApi: HackerNewsApi
 
     private var getCommentsTask: AsyncTask<Long, Unit, List<Item?>>? = null
+    private var hideProgressTask: AsyncTask<Unit, Unit, Unit>? = null
     private val moshi = Moshi.Builder().build()
     private val itemJsonAdapter = moshi.adapter(Item::class.java)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_story)
+
+        webView = findViewById(R.id.web_view)
+        recyclerView = findViewById(R.id.comment_recycler)
+        progressView = findViewById(R.id.progress)
 
         val item = intent.getStringExtra(EXTRA_ITEM_JSON)?.let {
             itemJsonAdapter.fromJson(it)
@@ -48,17 +60,44 @@ class StoryActivity : AppCompatActivity() {
 
         hackerNewsApi = retrofit.create(HackerNewsApi::class.java)
 
-        recyclerView = findViewById(R.id.comment_recycler)
         val itemDecoration = DividerItemDecoration(recyclerView.context, DividerItemDecoration.VERTICAL)
         recyclerView.addItemDecoration(itemDecoration)
 
-        webView = findViewById(R.id.web_view)
-
         if (item == null) return
 
+        progressView.visibility = View.VISIBLE
+
+        val progressLatch = CountDownLatch(2)
+
+        hideProgressTask = @SuppressLint("StaticFieldLeak") object : AsyncTask<Unit, Unit, Unit>() {
+
+            override fun doInBackground(vararg unit: Unit?) {
+                try {
+                    progressLatch.await()
+                } catch (e: InterruptedException) {
+                }
+            }
+
+            override fun onPostExecute(result: Unit?) {
+                progressView.visibility = View.GONE
+            }
+        }
+
+        hideProgressTask?.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR)
+
+        webView.webViewClient = object : WebViewClient() {
+
+            override fun onPageFinished(view: WebView?, url: String?) {
+                progressLatch.countDown()
+            }
+
+            override fun onReceivedError(view: WebView?, request: WebResourceRequest?, error: WebResourceError?) {
+                progressLatch.countDown()
+            }
+        }
         webView.loadUrl(item.url)
 
-        getCommentsTask = @SuppressLint("StaticFieldLeak") object :AsyncTask<Long, Unit, List<Item?>>() {
+        getCommentsTask = @SuppressLint("StaticFieldLeak") object : AsyncTask<Long, Unit, List<Item?>>() {
             override fun doInBackground(vararg itemIds: Long?): List<Item?> {
                 val ids = itemIds.mapNotNull { it }
                 val itemMap = ConcurrentHashMap<Long, Item?>()
@@ -87,11 +126,19 @@ class StoryActivity : AppCompatActivity() {
             }
 
             override fun onPostExecute(items: List<Item?>) {
+                progressLatch.countDown()
                 viewAdapter = CommentAdapter(items)
                 recyclerView.adapter = viewAdapter
-            } }
+            }
+        }
 
-        // TODO: Support Thread Comments
-        getCommentsTask?.execute(*item.kids.toTypedArray())
+        getCommentsTask?.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, *item.kids.toTypedArray())
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        getCommentsTask?.run {
+            if (!isCancelled) cancel(true)
+        }
     }
 }
