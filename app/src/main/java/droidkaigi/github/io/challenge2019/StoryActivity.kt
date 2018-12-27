@@ -65,6 +65,7 @@ class StoryActivity : AppCompatActivity() {
 
         hackerNewsApi = retrofit.create(HackerNewsApi::class.java)
 
+        recyclerView.isNestedScrollingEnabled = false
         val itemDecoration = DividerItemDecoration(recyclerView.context, DividerItemDecoration.VERTICAL)
         recyclerView.addItemDecoration(itemDecoration)
         commentAdapter = CommentAdapter(emptyList())
