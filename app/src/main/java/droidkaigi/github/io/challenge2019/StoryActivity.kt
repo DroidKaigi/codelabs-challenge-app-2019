@@ -1,5 +1,6 @@
 package droidkaigi.github.io.challenge2019
 
+import android.annotation.SuppressLint
 import android.os.AsyncTask
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
@@ -28,6 +29,7 @@ class StoryActivity : AppCompatActivity() {
     private lateinit var viewAdapter: RecyclerView.Adapter<*>
     private lateinit var hackerNewsApi: HackerNewsApi
 
+    private var getCommentsTask: AsyncTask<Long, Unit, List<Item?>>? = null
     private val moshi = Moshi.Builder().build()
     private val itemJsonAdapter = moshi.adapter(Item::class.java)
 
@@ -56,49 +58,40 @@ class StoryActivity : AppCompatActivity() {
 
         webView.loadUrl(item.url)
 
-        val task = GetItemsTask(hackerNewsApi) { items ->
-            viewAdapter = CommentAdapter(items)
-            recyclerView.adapter = viewAdapter
-        }
+        getCommentsTask = @SuppressLint("StaticFieldLeak") object :AsyncTask<Long, Unit, List<Item?>>() {
+            override fun doInBackground(vararg itemIds: Long?): List<Item?> {
+                val ids = itemIds.mapNotNull { it }
+                val itemMap = ConcurrentHashMap<Long, Item?>()
+                val latch = CountDownLatch(ids.size)
+
+                ids.forEach { id ->
+                    hackerNewsApi.getItem(id).enqueue(object : Callback<Item> {
+                        override fun onResponse(call: Call<Item>, response: Response<Item>) {
+                            response.body()?.let { item -> itemMap[id] = item }
+                            latch.countDown()
+                        }
+
+                        override fun onFailure(call: Call<Item>, t: Throwable) {
+                            latch.countDown()
+                        }
+                    })
+                }
+
+                try {
+                    latch.await()
+                } catch (e: InterruptedException) {
+                    return emptyList()
+                }
+
+                return ids.map { itemMap[it] }
+            }
+
+            override fun onPostExecute(items: List<Item?>) {
+                viewAdapter = CommentAdapter(items)
+                recyclerView.adapter = viewAdapter
+            } }
 
         // TODO: Support Thread Comments
-        task.execute(*item.kids.toTypedArray())
-    }
-
-    class GetItemsTask(
-        private val hackerNewsApi: HackerNewsApi,
-        private val onPostExecute: (List<Item?>) -> Unit
-    ) : AsyncTask<Long, Unit, List<Item?>>() {
-
-        override fun doInBackground(vararg itemIds: Long?): List<Item?> {
-            val ids = itemIds.mapNotNull { it }
-            val itemMap = ConcurrentHashMap<Long, Item?>()
-            val latch = CountDownLatch(ids.size)
-
-            ids.forEach { id ->
-                hackerNewsApi.getItem(id).enqueue(object : Callback<Item> {
-                    override fun onResponse(call: Call<Item>, response: Response<Item>) {
-                        response.body()?.let { item -> itemMap[id] = item }
-                        latch.countDown()
-                    }
-
-                    override fun onFailure(call: Call<Item>, t: Throwable) {
-                        latch.countDown()
-                    }
-                })
-            }
-
-            try {
-                latch.await()
-            } catch (e: InterruptedException) {
-                return emptyList()
-            }
-
-            return ids.map { itemMap[it] }
-        }
-
-        override fun onPostExecute(result: List<Item?>) {
-            onPostExecute.invoke(result)
-        }
+        getCommentsTask?.execute(*item.kids.toTypedArray())
     }
 }

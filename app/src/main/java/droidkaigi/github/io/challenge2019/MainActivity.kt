@@ -1,5 +1,6 @@
 package droidkaigi.github.io.challenge2019
 
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.AsyncTask
 import android.os.Bundle
@@ -23,7 +24,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var viewAdapter: RecyclerView.Adapter<*>
     private lateinit var hackerNewsApi: HackerNewsApi
 
-    private var getItemsTask: GetItemsTask? = null
+    private var getItemsTask: AsyncTask<Long, Unit, List<Item?>>? = null
     private val moshi = Moshi.Builder().build()
     private val itemJsonAdapter = moshi.adapter(Item::class.java)
 
@@ -48,15 +49,44 @@ class MainActivity : AppCompatActivity() {
                 if (!response.isSuccessful) return
 
                 response.body()?.let { itemIds ->
-                    getItemsTask = GetItemsTask(hackerNewsApi) { items ->
-                        viewAdapter = StoryAdapter(items) { item ->
-                            val itemJson = itemJsonAdapter.toJson(item)
-                            val intent = Intent(this@MainActivity, StoryActivity::class.java).apply {
-                                putExtra(StoryActivity.EXTRA_ITEM_JSON, itemJson)
+                    getItemsTask = @SuppressLint("StaticFieldLeak") object: AsyncTask<Long, Unit, List<Item?>>() {
+                        override fun doInBackground(vararg itemIds: Long?): List<Item?> {
+                            val ids = itemIds.mapNotNull { it }
+                            val itemMap = ConcurrentHashMap<Long, Item?>()
+                            val latch = CountDownLatch(ids.size)
+
+                            ids.forEach { id ->
+                                hackerNewsApi.getItem(id).enqueue(object : Callback<Item> {
+                                    override fun onResponse(call: Call<Item>, response: Response<Item>) {
+                                        response.body()?.let { item -> itemMap[id] = item }
+                                        latch.countDown()
+                                    }
+
+                                    override fun onFailure(call: Call<Item>, t: Throwable) {
+                                        latch.countDown()
+                                    }
+                                })
                             }
-                            startActivity(intent)
+
+                            try {
+                                latch.await()
+                            } catch (e: InterruptedException) {
+                                return emptyList()
+                            }
+
+                            return ids.map { itemMap[it] }
                         }
-                        recyclerView.adapter = viewAdapter
+
+                        override fun onPostExecute(items: List<Item?>) {
+                            viewAdapter = StoryAdapter(items) { item ->
+                                val itemJson = itemJsonAdapter.toJson(item)
+                                val intent = Intent(this@MainActivity, StoryActivity::class.java).apply {
+                                    putExtra(StoryActivity.EXTRA_ITEM_JSON, itemJson)
+                                }
+                                startActivity(intent)
+                            }
+                            recyclerView.adapter = viewAdapter
+                        }
                     }
 
                     getItemsTask?.execute(*itemIds.take(20).toTypedArray())
@@ -73,43 +103,6 @@ class MainActivity : AppCompatActivity() {
         super.onDestroy()
         getItemsTask?.run {
             if (!isCancelled) cancel(true)
-        }
-    }
-
-    class GetItemsTask(
-        private val hackerNewsApi: HackerNewsApi,
-        private val onPostExecute: (List<Item?>) -> Unit
-    ) : AsyncTask<Long, Unit, List<Item?>>() {
-
-        override fun doInBackground(vararg itemIds: Long?): List<Item?> {
-            val ids = itemIds.mapNotNull { it }
-            val itemMap = ConcurrentHashMap<Long, Item?>()
-            val latch = CountDownLatch(ids.size)
-
-            ids.forEach { id ->
-                hackerNewsApi.getItem(id).enqueue(object : Callback<Item> {
-                    override fun onResponse(call: Call<Item>, response: Response<Item>) {
-                        response.body()?.let { item -> itemMap[id] = item }
-                        latch.countDown()
-                    }
-
-                    override fun onFailure(call: Call<Item>, t: Throwable) {
-                        latch.countDown()
-                    }
-                })
-            }
-
-            try {
-                latch.await()
-            } catch (e: InterruptedException) {
-                return emptyList()
-            }
-
-            return ids.map { itemMap[it] }
-        }
-
-        override fun onPostExecute(result: List<Item?>) {
-            onPostExecute.invoke(result)
         }
     }
 }
