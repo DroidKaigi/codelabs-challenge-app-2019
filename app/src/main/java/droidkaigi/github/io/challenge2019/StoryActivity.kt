@@ -13,6 +13,7 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.ProgressBar
 import com.squareup.moshi.Moshi
+import com.squareup.moshi.Types
 import droidkaigi.github.io.challenge2019.data.api.HackerNewsApi
 import droidkaigi.github.io.challenge2019.data.api.response.Item
 import retrofit2.Call
@@ -27,19 +28,23 @@ class StoryActivity : AppCompatActivity() {
 
     companion object {
         const val EXTRA_ITEM_JSON = "droidkaigi.github.io.challenge2019.EXTRA_ITEM_JSON"
+
+        private const val STATE_COMMENTS = "comments"
     }
 
     private lateinit var webView: WebView
     private lateinit var recyclerView: RecyclerView
     private lateinit var progressView: ProgressBar
 
-    private lateinit var viewAdapter: RecyclerView.Adapter<*>
+    private lateinit var commentAdapter: CommentAdapter
     private lateinit var hackerNewsApi: HackerNewsApi
 
     private var getCommentsTask: AsyncTask<Long, Unit, List<Item?>>? = null
     private var hideProgressTask: AsyncTask<Unit, Unit, Unit>? = null
     private val moshi = Moshi.Builder().build()
     private val itemJsonAdapter = moshi.adapter(Item::class.java)
+    private val itemsJsonAdapter =
+        moshi.adapter<List<Item?>>(Types.newParameterizedType(List::class.java, Item::class.java))
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -62,8 +67,23 @@ class StoryActivity : AppCompatActivity() {
 
         val itemDecoration = DividerItemDecoration(recyclerView.context, DividerItemDecoration.VERTICAL)
         recyclerView.addItemDecoration(itemDecoration)
+        commentAdapter = CommentAdapter(emptyList())
+        recyclerView.adapter = commentAdapter
 
         if (item == null) return
+
+        val savedComments = savedInstanceState?.let { bundle ->
+            bundle.getString(STATE_COMMENTS)?.let { itemsJson ->
+                itemsJsonAdapter.fromJson(itemsJson)
+            }
+        }
+
+        if (savedComments != null) {
+            commentAdapter.comments = savedComments
+            commentAdapter.notifyDataSetChanged()
+            webView.loadUrl(item.url)
+            return
+        }
 
         progressView.visibility = View.VISIBLE
 
@@ -127,17 +147,28 @@ class StoryActivity : AppCompatActivity() {
 
             override fun onPostExecute(items: List<Item?>) {
                 progressLatch.countDown()
-                viewAdapter = CommentAdapter(items)
-                recyclerView.adapter = viewAdapter
+                commentAdapter.comments = items
+                commentAdapter.notifyDataSetChanged()
             }
         }
 
         getCommentsTask?.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, *item.kids.toTypedArray())
     }
 
+    override fun onSaveInstanceState(outState: Bundle?) {
+        outState?.apply {
+            putString(STATE_COMMENTS, itemsJsonAdapter.toJson(commentAdapter.comments))
+        }
+
+        super.onSaveInstanceState(outState)
+    }
+
     override fun onDestroy() {
         super.onDestroy()
         getCommentsTask?.run {
+            if (!isCancelled) cancel(true)
+        }
+        hideProgressTask?.run {
             if (!isCancelled) cancel(true)
         }
     }

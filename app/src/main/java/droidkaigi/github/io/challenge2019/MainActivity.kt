@@ -10,6 +10,7 @@ import android.support.v7.widget.RecyclerView
 import android.view.View
 import android.widget.ProgressBar
 import com.squareup.moshi.Moshi
+import com.squareup.moshi.Types
 import droidkaigi.github.io.challenge2019.data.api.HackerNewsApi
 import droidkaigi.github.io.challenge2019.data.api.response.Item
 import retrofit2.Call
@@ -22,14 +23,21 @@ import java.util.concurrent.CountDownLatch
 
 class MainActivity : AppCompatActivity() {
 
+    companion object {
+        private const val STATE_STORIES = "stories"
+    }
+
     private lateinit var recyclerView: RecyclerView
     private lateinit var progressView: ProgressBar
-    private lateinit var viewAdapter: RecyclerView.Adapter<*>
+
+    private lateinit var storyAdapter: StoryAdapter
     private lateinit var hackerNewsApi: HackerNewsApi
 
     private var getItemsTask: AsyncTask<Long, Unit, List<Item?>>? = null
     private val moshi = Moshi.Builder().build()
     private val itemJsonAdapter = moshi.adapter(Item::class.java)
+    private val itemsJsonAdapter =
+        moshi.adapter<List<Item?>>(Types.newParameterizedType(List::class.java, Item::class.java))
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -47,6 +55,26 @@ class MainActivity : AppCompatActivity() {
 
         val itemDecoration = DividerItemDecoration(recyclerView.context, DividerItemDecoration.VERTICAL)
         recyclerView.addItemDecoration(itemDecoration)
+        storyAdapter = StoryAdapter(emptyList()) { item ->
+            val itemJson = itemJsonAdapter.toJson(item)
+            val intent = Intent(this@MainActivity, StoryActivity::class.java).apply {
+                putExtra(StoryActivity.EXTRA_ITEM_JSON, itemJson)
+            }
+            startActivity(intent)
+        }
+        recyclerView.adapter = storyAdapter
+
+        val savedStories = savedInstanceState?.let { bundle ->
+            bundle.getString(STATE_STORIES)?.let { itemsJson ->
+                itemsJsonAdapter.fromJson(itemsJson)
+            }
+        }
+
+        if (savedStories != null) {
+            storyAdapter.stories = savedStories
+            storyAdapter.notifyDataSetChanged()
+            return
+        }
 
         progressView.visibility = View.VISIBLE
         hackerNewsApi.getTopStories().enqueue(object : Callback<List<Long>> {
@@ -55,7 +83,7 @@ class MainActivity : AppCompatActivity() {
                 if (!response.isSuccessful) return
 
                 response.body()?.let { itemIds ->
-                    getItemsTask = @SuppressLint("StaticFieldLeak") object: AsyncTask<Long, Unit, List<Item?>>() {
+                    getItemsTask = @SuppressLint("StaticFieldLeak") object : AsyncTask<Long, Unit, List<Item?>>() {
 
                         override fun doInBackground(vararg itemIds: Long?): List<Item?> {
                             val ids = itemIds.mapNotNull { it }
@@ -86,14 +114,8 @@ class MainActivity : AppCompatActivity() {
 
                         override fun onPostExecute(items: List<Item?>) {
                             progressView.visibility = View.GONE
-                            viewAdapter = StoryAdapter(items) { item ->
-                                val itemJson = itemJsonAdapter.toJson(item)
-                                val intent = Intent(this@MainActivity, StoryActivity::class.java).apply {
-                                    putExtra(StoryActivity.EXTRA_ITEM_JSON, itemJson)
-                                }
-                                startActivity(intent)
-                            }
-                            recyclerView.adapter = viewAdapter
+                            storyAdapter.stories = items
+                            storyAdapter.notifyDataSetChanged()
                         }
                     }
 
@@ -105,6 +127,14 @@ class MainActivity : AppCompatActivity() {
 
             }
         })
+    }
+
+    override fun onSaveInstanceState(outState: Bundle?) {
+        outState?.apply {
+            putString(STATE_STORIES, itemsJsonAdapter.toJson(storyAdapter.stories))
+        }
+
+        super.onSaveInstanceState(outState)
     }
 
     override fun onDestroy() {
