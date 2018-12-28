@@ -3,9 +3,9 @@ package droidkaigi.github.io.challenge2019
 import android.annotation.SuppressLint
 import android.os.AsyncTask
 import android.os.Bundle
-import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.DividerItemDecoration
 import android.support.v7.widget.RecyclerView
+import android.view.MenuItem
 import android.view.View
 import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
@@ -42,6 +42,8 @@ class StoryActivity : BaseActivity() {
     private val itemsJsonAdapter =
         moshi.adapter<List<Item?>>(Types.newParameterizedType(List::class.java, Item::class.java))
 
+    private var item: Item? = null
+
     override fun getContentView(): Int {
         return R.layout.activity_story
     }
@@ -52,7 +54,7 @@ class StoryActivity : BaseActivity() {
         recyclerView = findViewById(R.id.comment_recycler)
         progressView = findViewById(R.id.progress)
 
-        val item = intent.getStringExtra(EXTRA_ITEM_JSON)?.let {
+        item = intent.getStringExtra(EXTRA_ITEM_JSON)?.let {
             itemJsonAdapter.fromJson(it)
         }
 
@@ -77,11 +79,16 @@ class StoryActivity : BaseActivity() {
         if (savedComments != null) {
             commentAdapter.comments = savedComments
             commentAdapter.notifyDataSetChanged()
-            webView.loadUrl(item.url)
+            webView.loadUrl(item!!.url)
             return
         }
 
         progressView.visibility = View.VISIBLE
+        loadUrlAndComments()
+    }
+
+    private fun loadUrlAndComments() {
+        if (item == null) return
 
         val progressLatch = CountDownLatch(2)
 
@@ -112,7 +119,7 @@ class StoryActivity : BaseActivity() {
                 progressLatch.countDown()
             }
         }
-        webView.loadUrl(item.url)
+        webView.loadUrl(item!!.url)
 
         getCommentsTask = @SuppressLint("StaticFieldLeak") object : AsyncTask<Long, Unit, List<Item?>>() {
             override fun doInBackground(vararg itemIds: Long?): List<Item?> {
@@ -150,7 +157,18 @@ class StoryActivity : BaseActivity() {
             }
         }
 
-        getCommentsTask?.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, *item.kids.toTypedArray())
+        getCommentsTask?.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, *item!!.kids.toTypedArray())
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem?): Boolean {
+        return when(item?.itemId) {
+            R.id.refresh -> {
+                progressView.visibility = Util.setVisibility(true)
+                loadUrlAndComments()
+                return true
+            }
+            else -> super.onOptionsItemSelected(item)
+        }
     }
 
     override fun onSaveInstanceState(outState: Bundle?) {

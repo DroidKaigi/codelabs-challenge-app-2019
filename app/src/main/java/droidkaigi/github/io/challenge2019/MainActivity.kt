@@ -7,6 +7,7 @@ import android.os.Bundle
 import android.support.v4.widget.SwipeRefreshLayout
 import android.support.v7.widget.DividerItemDecoration
 import android.support.v7.widget.RecyclerView
+import android.view.MenuItem
 import android.view.View
 import android.widget.ProgressBar
 import com.squareup.moshi.Types
@@ -134,6 +135,17 @@ class MainActivity : BaseActivity() {
                 showError(t)
             }
         })
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem?): Boolean {
+        return when(item?.itemId) {
+            R.id.refresh -> {
+                progressView.visibility = Util.setVisibility(true)
+                loadTopStories()
+                return true
+            }
+            else -> super.onOptionsItemSelected(item)
+        }
     }
 
     override fun onSaveInstanceState(outState: Bundle?) {
