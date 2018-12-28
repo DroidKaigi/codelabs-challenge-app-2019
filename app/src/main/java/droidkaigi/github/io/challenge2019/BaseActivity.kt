@@ -2,8 +2,12 @@ package droidkaigi.github.io.challenge2019
 
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
+import com.squareup.moshi.Moshi
 
 abstract class BaseActivity : AppCompatActivity() {
+
+    internal val moshi = Moshi.Builder().build()
+
     abstract fun getContentView(): Int
 
     override fun onCreate(savedInstanceState: Bundle?) {
