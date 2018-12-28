@@ -16,6 +16,10 @@
                 type="android.text.Html"
         />
 
+        <import
+                type="android.view.View"
+        />
+
     </data>
 
 
@@ -42,7 +46,8 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:textAppearance="@style/TextAppearance.AppCompat.Body1"
-                android:text="@{Html.fromHtml(item.text)}"
+                android:text="@{item.text != null ? Html.fromHtml(item.text) : null}"
+                android:visibility="@{item.text != null ? View.VISIBLE : View.GONE}"
                 android:autoLink="all"
                 app:layout_constraintTop_toBottomOf="@id/author"
                 app:layout_constraintStart_toStartOf="parent"
