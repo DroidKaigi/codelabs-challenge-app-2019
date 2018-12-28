@@ -76,7 +76,7 @@ class MainActivity : BaseActivity() {
             return
         }
 
-        progressView.visibility = View.VISIBLE
+        progressView.visibility = Util.setVisibility(true)
         loadTopStories()
     }
 

@@ -96,7 +96,7 @@ class StoryActivity : BaseActivity() {
             }
 
             override fun onPostExecute(result: Unit?) {
-                progressView.visibility = View.GONE
+                progressView.visibility = Util.setVisibility(false)
             }
         }
 
