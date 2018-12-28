@@ -15,8 +15,6 @@ import droidkaigi.github.io.challenge2019.data.api.response.Item
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
-import retrofit2.Retrofit
-import retrofit2.converter.moshi.MoshiConverterFactory
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CountDownLatch
 
@@ -49,10 +47,7 @@ class MainActivity : BaseActivity() {
         progressView = findViewById(R.id.progress)
         swipeRefreshLayout = findViewById(R.id.swipe_refresh)
 
-        val retrofit = Retrofit.Builder()
-            .baseUrl("https://hacker-news.firebaseio.com/v0/")
-            .addConverterFactory(MoshiConverterFactory.create())
-            .build()
+        val retrofit = createRetrofit("https://hacker-news.firebaseio.com/v0/")
 
         hackerNewsApi = retrofit.create(HackerNewsApi::class.java)
 
