@@ -107,6 +107,7 @@ class MainActivity : BaseActivity() {
                                     }
 
                                     override fun onFailure(call: Call<Item>, t: Throwable) {
+                                        showError(t)
                                         latch.countDown()
                                     }
                                 })
@@ -115,6 +116,7 @@ class MainActivity : BaseActivity() {
                             try {
                                 latch.await()
                             } catch (e: InterruptedException) {
+                                showError(e)
                                 return emptyList()
                             }
 
@@ -134,7 +136,7 @@ class MainActivity : BaseActivity() {
             }
 
             override fun onFailure(call: Call<List<Long>>, t: Throwable) {
-
+                showError(t)
             }
         })
     }

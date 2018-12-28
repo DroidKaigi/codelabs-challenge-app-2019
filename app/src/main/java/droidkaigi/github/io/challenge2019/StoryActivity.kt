@@ -96,6 +96,7 @@ class StoryActivity : BaseActivity() {
                 try {
                     progressLatch.await()
                 } catch (e: InterruptedException) {
+                    showError(e)
                 }
             }
 
@@ -133,6 +134,7 @@ class StoryActivity : BaseActivity() {
 
                         override fun onFailure(call: Call<Item>, t: Throwable) {
                             latch.countDown()
+                            showError(t)
                         }
                     })
                 }
