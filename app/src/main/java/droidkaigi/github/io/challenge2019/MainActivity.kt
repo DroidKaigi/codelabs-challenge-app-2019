@@ -1,6 +1,9 @@
 package droidkaigi.github.io.challenge2019
 
 import android.annotation.SuppressLint
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import android.content.Intent
 import android.os.AsyncTask
 import android.os.Bundle
@@ -54,13 +57,41 @@ class MainActivity : BaseActivity() {
 
         val itemDecoration = DividerItemDecoration(recyclerView.context, DividerItemDecoration.VERTICAL)
         recyclerView.addItemDecoration(itemDecoration)
-        storyAdapter = StoryAdapter(emptyList()) { item ->
-            val itemJson = itemJsonAdapter.toJson(item)
-            val intent = Intent(this@MainActivity, StoryActivity::class.java).apply {
-                putExtra(StoryActivity.EXTRA_ITEM_JSON, itemJson)
+        storyAdapter = StoryAdapter(
+            stories = mutableListOf(),
+            onClickItem = { item ->
+                val itemJson = itemJsonAdapter.toJson(item)
+                val intent = Intent(this@MainActivity, StoryActivity::class.java).apply {
+                    putExtra(StoryActivity.EXTRA_ITEM_JSON, itemJson)
+                }
+                startActivity(intent)
+            },
+            onClickMenuItem = { item, menuItemId ->
+                when (menuItemId) {
+                    R.id.copy_url -> {
+                        val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                        clipboard.primaryClip = ClipData.newPlainText("url", item.url)
+                    }
+                    R.id.refresh -> {
+                        hackerNewsApi.getItem(item.id).enqueue(object : Callback<Item> {
+                            override fun onResponse(call: Call<Item>, response: Response<Item>) {
+                                response.body()?.let { newItem ->
+                                    val index = storyAdapter.stories.indexOf(item)
+                                    if (index == -1 ) return
+
+                                    storyAdapter.stories[index] = newItem
+                                    storyAdapter.notifyItemChanged(index)
+                                }
+                            }
+
+                            override fun onFailure(call: Call<Item>, t: Throwable) {
+                                showError(t)
+                            }
+                        })
+                    }
+                }
             }
-            startActivity(intent)
-        }
+        )
         recyclerView.adapter = storyAdapter
 
         swipeRefreshLayout.setOnRefreshListener { loadTopStories() }
@@ -72,7 +103,7 @@ class MainActivity : BaseActivity() {
         }
 
         if (savedStories != null) {
-            storyAdapter.stories = savedStories
+            storyAdapter.stories = savedStories.toMutableList()
             storyAdapter.notifyDataSetChanged()
             return
         }
@@ -122,7 +153,7 @@ class MainActivity : BaseActivity() {
                         override fun onPostExecute(items: List<Item?>) {
                             progressView.visibility = View.GONE
                             swipeRefreshLayout.isRefreshing = false
-                            storyAdapter.stories = items
+                            storyAdapter.stories = items.toMutableList()
                             storyAdapter.notifyDataSetChanged()
                         }
                     }
@@ -138,7 +169,7 @@ class MainActivity : BaseActivity() {
     }
 
     override fun onOptionsItemSelected(item: MenuItem?): Boolean {
-        return when(item?.itemId) {
+        return when (item?.itemId) {
             R.id.refresh -> {
                 progressView.visibility = Util.setVisibility(true)
                 loadTopStories()
