@@ -80,7 +80,9 @@ class MainActivity : BaseActivity() {
                                     if (index == -1 ) return
 
                                     storyAdapter.stories[index] = newItem
-                                    storyAdapter.notifyItemChanged(index)
+                                    runOnUiThread {
+                                        storyAdapter.notifyItemChanged(index)
+                                    }
                                 }
                             }
 
