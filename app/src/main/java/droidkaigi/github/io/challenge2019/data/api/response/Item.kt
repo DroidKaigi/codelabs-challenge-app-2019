@@ -16,7 +16,7 @@ data class Item(
     @Json(name = "time")
     val time: Long = 0L,
     @Json(name = "text")
-    val text: String = "",
+    val text: String? = "",
     @Json(name = "dead")
     val dead: Boolean = false,
     @Json(name = "parent")
