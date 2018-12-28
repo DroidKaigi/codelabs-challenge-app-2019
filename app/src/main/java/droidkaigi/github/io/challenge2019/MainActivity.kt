@@ -5,24 +5,20 @@ import android.content.Intent
 import android.os.AsyncTask
 import android.os.Bundle
 import android.support.v4.widget.SwipeRefreshLayout
-import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.DividerItemDecoration
 import android.support.v7.widget.RecyclerView
 import android.view.View
 import android.widget.ProgressBar
-import com.squareup.moshi.Moshi
 import com.squareup.moshi.Types
 import droidkaigi.github.io.challenge2019.data.api.HackerNewsApi
 import droidkaigi.github.io.challenge2019.data.api.response.Item
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
-import retrofit2.Retrofit
-import retrofit2.converter.moshi.MoshiConverterFactory
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CountDownLatch
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : BaseActivity() {
 
     companion object {
         private const val STATE_STORIES = "stories"
@@ -36,23 +32,22 @@ class MainActivity : AppCompatActivity() {
     private lateinit var hackerNewsApi: HackerNewsApi
 
     private var getStoriesTask: AsyncTask<Long, Unit, List<Item?>>? = null
-    private val moshi = Moshi.Builder().build()
     private val itemJsonAdapter = moshi.adapter(Item::class.java)
     private val itemsJsonAdapter =
         moshi.adapter<List<Item?>>(Types.newParameterizedType(List::class.java, Item::class.java))
 
+
+    override fun getContentView(): Int {
+        return R.layout.activity_main
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
-
         recyclerView = findViewById(R.id.item_recycler)
         progressView = findViewById(R.id.progress)
         swipeRefreshLayout = findViewById(R.id.swipe_refresh)
 
-        val retrofit = Retrofit.Builder()
-            .baseUrl("https://hacker-news.firebaseio.com/v0/")
-            .addConverterFactory(MoshiConverterFactory.create())
-            .build()
+        val retrofit = createRetrofit("https://hacker-news.firebaseio.com/v0/")
 
         hackerNewsApi = retrofit.create(HackerNewsApi::class.java)
 
@@ -107,6 +102,7 @@ class MainActivity : AppCompatActivity() {
                                     }
 
                                     override fun onFailure(call: Call<Item>, t: Throwable) {
+                                        showError(t)
                                         latch.countDown()
                                     }
                                 })
@@ -115,6 +111,7 @@ class MainActivity : AppCompatActivity() {
                             try {
                                 latch.await()
                             } catch (e: InterruptedException) {
+                                showError(e)
                                 return emptyList()
                             }
 
@@ -134,7 +131,7 @@ class MainActivity : AppCompatActivity() {
             }
 
             override fun onFailure(call: Call<List<Long>>, t: Throwable) {
-
+                showError(t)
             }
         })
     }

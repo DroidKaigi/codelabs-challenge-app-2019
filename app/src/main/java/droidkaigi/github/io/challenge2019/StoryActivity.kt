@@ -12,19 +12,16 @@ import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.ProgressBar
-import com.squareup.moshi.Moshi
 import com.squareup.moshi.Types
 import droidkaigi.github.io.challenge2019.data.api.HackerNewsApi
 import droidkaigi.github.io.challenge2019.data.api.response.Item
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
-import retrofit2.Retrofit
-import retrofit2.converter.moshi.MoshiConverterFactory
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CountDownLatch
 
-class StoryActivity : AppCompatActivity() {
+class StoryActivity : BaseActivity() {
 
     companion object {
         const val EXTRA_ITEM_JSON = "droidkaigi.github.io.challenge2019.EXTRA_ITEM_JSON"
@@ -41,15 +38,16 @@ class StoryActivity : AppCompatActivity() {
 
     private var getCommentsTask: AsyncTask<Long, Unit, List<Item?>>? = null
     private var hideProgressTask: AsyncTask<Unit, Unit, Unit>? = null
-    private val moshi = Moshi.Builder().build()
     private val itemJsonAdapter = moshi.adapter(Item::class.java)
     private val itemsJsonAdapter =
         moshi.adapter<List<Item?>>(Types.newParameterizedType(List::class.java, Item::class.java))
 
+    override fun getContentView(): Int {
+        return R.layout.activity_story
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_story)
-
         webView = findViewById(R.id.web_view)
         recyclerView = findViewById(R.id.comment_recycler)
         progressView = findViewById(R.id.progress)
@@ -58,10 +56,7 @@ class StoryActivity : AppCompatActivity() {
             itemJsonAdapter.fromJson(it)
         }
 
-        val retrofit = Retrofit.Builder()
-            .baseUrl("https://hacker-news.firebaseio.com/v0/")
-            .addConverterFactory(MoshiConverterFactory.create())
-            .build()
+        val retrofit = createRetrofit("https://hacker-news.firebaseio.com/v0/")
 
         hackerNewsApi = retrofit.create(HackerNewsApi::class.java)
 
@@ -96,6 +91,7 @@ class StoryActivity : AppCompatActivity() {
                 try {
                     progressLatch.await()
                 } catch (e: InterruptedException) {
+                    showError(e)
                 }
             }
 
@@ -133,6 +129,7 @@ class StoryActivity : AppCompatActivity() {
 
                         override fun onFailure(call: Call<Item>, t: Throwable) {
                             latch.countDown()
+                            showError(t)
                         }
                     })
                 }
