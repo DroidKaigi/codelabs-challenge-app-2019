@@ -8,8 +8,8 @@
     <data>
 
         <variable
-                name="item"
-                type="droidkaigi.github.io.challenge2019.data.api.response.Item"
+                name="comment"
+                type="droidkaigi.github.io.challenge2019.data.repository.entity.Comment"
         />
 
         <import
@@ -34,7 +34,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:textAppearance="@style/TextAppearance.AppCompat.Caption"
-                android:text="@{item.author}"
+                android:text="@{comment.author}"
                 app:layout_constraintTop_toTopOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
@@ -46,8 +46,8 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:textAppearance="@style/TextAppearance.AppCompat.Body1"
-                android:text="@{item.text != null ? Html.fromHtml(item.text) : null}"
-                android:visibility="@{item.text != null ? View.VISIBLE : View.GONE}"
+                android:text="@{comment.text != null ? Html.fromHtml(comment.text) : null}"
+                android:visibility="@{comment.text != null ? View.VISIBLE : View.GONE}"
                 android:autoLink="all"
                 app:layout_constraintTop_toBottomOf="@id/author"
                 app:layout_constraintStart_toStartOf="parent"

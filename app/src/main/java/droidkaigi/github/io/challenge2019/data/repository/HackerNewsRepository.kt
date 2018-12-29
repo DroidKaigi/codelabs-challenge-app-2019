@@ -78,7 +78,7 @@ object HackerNewsRepository {
 
         GetItemsTask(hackerNewsApi) { items ->
             val comments = items.map { it?.toComment(emptyList()) }
-            liveData.value = if (comments.all { it == null }) {
+            liveData.value = if (!story.commentIds.isEmpty() && comments.all { it == null }) {
                 Resource.Error(Exception("failed to get all comments"))
             } else {
                 Resource.Success(comments)
