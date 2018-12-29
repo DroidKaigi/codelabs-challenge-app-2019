@@ -9,8 +9,6 @@ import android.view.MenuItem
 import android.widget.Toast
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.adapters.Rfc3339DateJsonAdapter
-import retrofit2.Retrofit
-import retrofit2.converter.moshi.MoshiConverterFactory
 import java.util.*
 
 abstract class BaseActivity : AppCompatActivity() {
