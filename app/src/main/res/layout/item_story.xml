@@ -23,14 +23,25 @@
 
         <TextView
                 android:id="@+id/title"
-                android:layout_width="match_parent"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:textAppearance="@style/TextAppearance.AppCompat.Title"
                 android:text="@{item.title}"
                 app:layout_constraintTop_toTopOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintEnd_toStartOf="@id/menu_button"
                 tools:text="title"
+        />
+
+        <android.support.v7.widget.AppCompatImageButton
+                android:id="@+id/menu_button"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:src="@drawable/baseline_more_vert_black_24"
+                style="@style/Widget.AppCompat.Button.Borderless"
+                app:layout_constraintStart_toEndOf="@id/title"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
         />
 
         <TextView
