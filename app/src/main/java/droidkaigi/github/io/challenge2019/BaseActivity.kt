@@ -44,7 +44,7 @@ abstract class BaseActivity : AppCompatActivity() {
     }
 
     override fun onOptionsItemSelected(item: MenuItem?): Boolean {
-        return when(item?.itemId) {
+        return when (item?.itemId) {
             R.id.exit -> {
                 this.finish()
                 return true
@@ -54,6 +54,8 @@ abstract class BaseActivity : AppCompatActivity() {
     }
 
     fun startActivityForResult(intent: Intent?) {
-        startActivityForResult(intent ,ACTIVITY_REQUEST)
+        intent?.let { intent2 ->
+            startActivityForResult(intent2, ACTIVITY_REQUEST)
+        }
     }
 }
