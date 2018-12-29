@@ -1,5 +1,6 @@
 package droidkaigi.github.io.challenge2019
 
+import android.content.Intent
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import android.util.Log
@@ -11,6 +12,10 @@ import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
 
 abstract class BaseActivity : AppCompatActivity() {
+
+    companion object {
+        const val ACTIVITY_REQUEST = 1
+    }
 
     internal val moshi = Moshi.Builder().build()
 
@@ -46,5 +51,9 @@ abstract class BaseActivity : AppCompatActivity() {
             }
             else -> super.onOptionsItemSelected(item)
         }
+    }
+
+    fun startActivityForResult(intent: Intent?) {
+        startActivityForResult(intent ,ACTIVITY_REQUEST)
     }
 }
