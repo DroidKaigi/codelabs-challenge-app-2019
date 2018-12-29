@@ -59,6 +59,7 @@ class StoryActivity : BaseActivity() {
         }
 
         setupRecyclerView()
+        setupWebView()
 
         val savedComments = savedInstanceState?.let { bundle ->
             bundle.getString(STATE_COMMENTS)?.let { itemsJson ->
@@ -100,9 +101,7 @@ class StoryActivity : BaseActivity() {
         recyclerView.adapter = commentAdapter
     }
 
-    private fun loadUrlAndComments() {
-        val story = this.story ?: return
-
+    private fun setupWebView() {
         webView.webViewClient = object : WebViewClient() {
 
             override fun onPageFinished(view: WebView?, url: String?) {
@@ -113,6 +112,10 @@ class StoryActivity : BaseActivity() {
                 viewModel.onErrorWebPageLoading()
             }
         }
+    }
+
+    private fun loadUrlAndComments() {
+        val story = this.story ?: return
 
         viewModel.onStartWebPageLoading()
         webView.loadUrl(story.url)
