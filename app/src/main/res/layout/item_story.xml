@@ -12,6 +12,11 @@
                 type="droidkaigi.github.io.challenge2019.data.api.response.Item"
         />
 
+        <variable
+                name="alreadyRead"
+                type="java.lang.Boolean"
+        />
+
     </data>
 
 
@@ -31,6 +36,7 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toStartOf="@id/menu_button"
                 tools:text="title"
+                android:textColor="@{alreadyRead ? @color/disabledText: @android:color/black}"
         />
 
         <android.support.v7.widget.AppCompatImageButton
