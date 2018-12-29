@@ -1,9 +1,7 @@
 package droidkaigi.github.io.challenge2019
 
 import android.annotation.SuppressLint
-import android.app.Activity
 import android.arch.lifecycle.Observer
-import android.content.Intent
 import android.os.AsyncTask
 import android.os.Bundle
 import android.support.v7.widget.DividerItemDecoration
@@ -36,12 +34,15 @@ class StoryActivity : BaseActivity() {
 
     private lateinit var commentAdapter: CommentAdapter
 
-    private var hideProgressTask: AsyncTask<Unit, Unit, Unit>? = null
     private val storyJsonAdapter = moshi.adapter(Story::class.java)
     private val commentsJsonAdapter =
         moshi.adapter<List<Comment?>>(Types.newParameterizedType(List::class.java, Comment::class.java))
 
     private var story: Story? = null
+
+    private val viewModel: StoryViewModel by lazy {
+        ViewModelProviders.of(this).get(StoryViewModel::class.java)
+    }
 
     override fun getContentView(): Int {
         return R.layout.activity_story
@@ -57,13 +58,7 @@ class StoryActivity : BaseActivity() {
             storyJsonAdapter.fromJson(it)
         }
 
-        recyclerView.isNestedScrollingEnabled = false
-        val itemDecoration = DividerItemDecoration(recyclerView.context, DividerItemDecoration.VERTICAL)
-        recyclerView.addItemDecoration(itemDecoration)
-        commentAdapter = CommentAdapter(emptyList())
-        recyclerView.adapter = commentAdapter
-
-        if (story == null) return
+        setupRecyclerView()
 
         val savedComments = savedInstanceState?.let { bundle ->
             bundle.getString(STATE_COMMENTS)?.let { itemsJson ->
@@ -78,66 +73,56 @@ class StoryActivity : BaseActivity() {
             return
         }
 
-        progressView.visibility = View.VISIBLE
+        viewModel.isLoading.observe(this, Observer { isLoading ->
+            progressView.visibility = Util.setVisibility(isLoading == true)
+        })
+
+        viewModel.comments.observe(this, Observer { resource ->
+            when (resource) {
+                is Resource.Success -> {
+                    commentAdapter.comments = resource.data
+                    commentAdapter.notifyDataSetChanged()
+                }
+                is Resource.Error -> {
+                    showError(resource.t)
+                }
+            }
+        })
+
         loadUrlAndComments()
+    }
+
+    private fun setupRecyclerView() {
+        recyclerView.isNestedScrollingEnabled = false
+        val itemDecoration = DividerItemDecoration(recyclerView.context, DividerItemDecoration.VERTICAL)
+        recyclerView.addItemDecoration(itemDecoration)
+        commentAdapter = CommentAdapter(emptyList())
+        recyclerView.adapter = commentAdapter
     }
 
     private fun loadUrlAndComments() {
         val story = this.story ?: return
 
-        val progressLatch = CountDownLatch(2)
-
-        hideProgressTask = @SuppressLint("StaticFieldLeak") object : AsyncTask<Unit, Unit, Unit>() {
-
-            override fun doInBackground(vararg unit: Unit?) {
-                try {
-                    progressLatch.await()
-                } catch (e: InterruptedException) {
-                    showError(e)
-                }
-            }
-
-            override fun onPostExecute(result: Unit?) {
-                progressView.visibility = Util.setVisibility(false)
-            }
-        }
-
-        hideProgressTask?.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR)
-
         webView.webViewClient = object : WebViewClient() {
 
             override fun onPageFinished(view: WebView?, url: String?) {
-                progressLatch.countDown()
+                viewModel.onFinishWebPageLoading()
             }
 
             override fun onReceivedError(view: WebView?, request: WebResourceRequest?, error: WebResourceError?) {
-                progressLatch.countDown()
+                viewModel.onErrorWebPageLoading()
             }
         }
+
+        viewModel.onStartWebPageLoading()
         webView.loadUrl(story.url)
 
-        val liveComments = HackerNewsRepository.getComments(story)
-        liveComments.observe(this, Observer { resource ->
-            when (resource) {
-                is Resource.Success -> {
-                    progressLatch.countDown()
-                    commentAdapter.comments = resource.data
-                    commentAdapter.notifyDataSetChanged()
-                    liveComments.removeObservers(this)
-                }
-                is Resource.Error -> {
-                    progressLatch.countDown()
-                    showError(resource.t)
-                    liveComments.removeObservers(this)
-                }
-            }
-        })
+        viewModel.loadComments(story)
     }
 
     override fun onOptionsItemSelected(item: MenuItem?): Boolean {
-        return when(item?.itemId) {
+        return when (item?.itemId) {
             R.id.refresh -> {
-                progressView.visibility = Util.setVisibility(true)
                 loadUrlAndComments()
                 return true
             }
@@ -159,12 +144,5 @@ class StoryActivity : BaseActivity() {
         }
 
         super.onSaveInstanceState(outState)
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        hideProgressTask?.run {
-            if (!isCancelled) cancel(true)
-        }
     }
 }
