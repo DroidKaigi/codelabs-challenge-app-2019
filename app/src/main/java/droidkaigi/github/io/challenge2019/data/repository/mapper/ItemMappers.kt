@@ -5,13 +5,11 @@ import droidkaigi.github.io.challenge2019.data.repository.entity.Comment
 import droidkaigi.github.io.challenge2019.data.repository.entity.Story
 import java.util.*
 
-fun Item.toStory(
-    comments: List<Comment>
-): Story = Story(
+fun Item.toStory(): Story = Story(
     author = author,
     descendants = descendants,
     id = id,
-    comments = comments,
+    commentIds = kids,
     score = score,
     time = Date(time * 1000),
     title = title,
