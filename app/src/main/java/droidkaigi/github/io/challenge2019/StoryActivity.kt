@@ -17,6 +17,7 @@ import android.widget.ProgressBar
 import com.squareup.moshi.Types
 import droidkaigi.github.io.challenge2019.data.api.HackerNewsApi
 import droidkaigi.github.io.challenge2019.data.api.response.Item
+import droidkaigi.github.io.challenge2019.data.repository.entity.Story
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -40,11 +41,11 @@ class StoryActivity : BaseActivity() {
 
     private var getCommentsTask: AsyncTask<Long, Unit, List<Item?>>? = null
     private var hideProgressTask: AsyncTask<Unit, Unit, Unit>? = null
-    private val itemJsonAdapter = moshi.adapter(Item::class.java)
+    private val storyJsonAdapter = moshi.adapter(Story::class.java)
     private val itemsJsonAdapter =
         moshi.adapter<List<Item?>>(Types.newParameterizedType(List::class.java, Item::class.java))
 
-    private var item: Item? = null
+    private var story: Story? = null
 
     override fun getContentView(): Int {
         return R.layout.activity_story
@@ -56,8 +57,8 @@ class StoryActivity : BaseActivity() {
         recyclerView = findViewById(R.id.comment_recycler)
         progressView = findViewById(R.id.progress)
 
-        item = intent.getStringExtra(EXTRA_ITEM_JSON)?.let {
-            itemJsonAdapter.fromJson(it)
+        story = intent.getStringExtra(EXTRA_ITEM_JSON)?.let {
+            storyJsonAdapter.fromJson(it)
         }
 
         val retrofit = createRetrofit("https://hacker-news.firebaseio.com/v0/")
@@ -70,7 +71,7 @@ class StoryActivity : BaseActivity() {
         commentAdapter = CommentAdapter(emptyList())
         recyclerView.adapter = commentAdapter
 
-        if (item == null) return
+        if (story == null) return
 
         val savedComments = savedInstanceState?.let { bundle ->
             bundle.getString(STATE_COMMENTS)?.let { itemsJson ->
@@ -81,7 +82,7 @@ class StoryActivity : BaseActivity() {
         if (savedComments != null) {
             commentAdapter.comments = savedComments
             commentAdapter.notifyDataSetChanged()
-            webView.loadUrl(item!!.url)
+            webView.loadUrl(story!!.url)
             return
         }
 
@@ -90,7 +91,7 @@ class StoryActivity : BaseActivity() {
     }
 
     private fun loadUrlAndComments() {
-        if (item == null) return
+        if (story == null) return
 
         val progressLatch = CountDownLatch(2)
 
@@ -121,7 +122,7 @@ class StoryActivity : BaseActivity() {
                 progressLatch.countDown()
             }
         }
-        webView.loadUrl(item!!.url)
+        webView.loadUrl(story!!.url)
 
         getCommentsTask = @SuppressLint("StaticFieldLeak") object : AsyncTask<Long, Unit, List<Item?>>() {
             override fun doInBackground(vararg itemIds: Long?): List<Item?> {
@@ -159,7 +160,7 @@ class StoryActivity : BaseActivity() {
             }
         }
 
-        getCommentsTask?.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, *item!!.kids.toTypedArray())
+        getCommentsTask?.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, *story!!.commentIds.toTypedArray())
     }
 
     override fun onOptionsItemSelected(item: MenuItem?): Boolean {
