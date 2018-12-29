@@ -28,8 +28,11 @@ object HackerNewsRepository {
             .create(HackerNewsApi::class.java)
     }
 
-    fun getTopStories(): LiveData<List<Story?>> {
-        val liveData = MutableLiveData<List<Story?>>()
+    fun getTopStories(): LiveData<Resource<List<Story?>>> {
+        // This is not an optimal implementation, we'll fix it after
+        val liveData = MutableLiveData<Resource<List<Story?>>>().apply {
+            postValue(Resource.Loading())
+        }
 
         hackerNewsApi.getTopStories().enqueue(object : Callback<List<Long>> {
 
@@ -39,35 +42,47 @@ object HackerNewsRepository {
                 response.body()?.let { itemIds ->
                     GetItemsTask(hackerNewsApi) { items ->
                         val stories = items.map { it?.toStory() }
-                        liveData.value = stories
+                        liveData.value = Resource.Success(stories)
                     }.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, *itemIds.take(20).toTypedArray())
                 }
             }
 
             override fun onFailure(call: Call<List<Long>>, t: Throwable) {
-                liveData.value = emptyList()
+                liveData.value = Resource.Error(t)
             }
         })
 
         return liveData
     }
 
-    fun getStory(id: Long): LiveData<Story?> {
-        val liveData = MutableLiveData<Story?>()
+    fun getStory(id: Long): LiveData<Resource<Story>> {
+        // This is not an optimal implementation, we'll fix it after
+        val liveData = MutableLiveData<Resource<Story>>().apply {
+            postValue(Resource.Loading())
+        }
 
         GetItemsTask(hackerNewsApi) { item ->
-            liveData.value = item.firstOrNull()?.toStory()
+            liveData.value = item.firstOrNull()?.let {
+                Resource.Success(it.toStory())
+            } ?: Resource.Error(Exception("failed to get story"))
         }.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, id)
 
         return liveData
     }
 
-    fun getComments(story: Story): LiveData<List<Comment?>> {
-        val liveData = MutableLiveData<List<Comment?>>()
+    fun getComments(story: Story): LiveData<Resource<List<Comment?>>> {
+        // This is not an optimal implementation, we'll fix it after
+        val liveData = MutableLiveData<Resource<List<Comment?>>>().apply {
+            postValue(Resource.Loading())
+        }
 
         GetItemsTask(hackerNewsApi) { items ->
             val comments = items.map { it?.toComment(emptyList()) }
-            liveData.value = comments
+            liveData.value = if (comments.all { it == null }) {
+                Resource.Error(Exception("failed to get all comments"))
+            } else {
+                Resource.Success(comments)
+            }
         }.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, *story.commentIds.toTypedArray())
 
         return liveData
