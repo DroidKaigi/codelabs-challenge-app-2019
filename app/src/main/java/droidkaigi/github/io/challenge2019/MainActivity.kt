@@ -189,10 +189,8 @@ class MainActivity : BaseActivity() {
                     }
                 }
             }
-            else -> {
-                super.onActivityResult(requestCode, resultCode, data)
-            }
         }
+        super.onActivityResult(requestCode, resultCode, data)
     }
 
     override fun onOptionsItemSelected(item: MenuItem?): Boolean {
