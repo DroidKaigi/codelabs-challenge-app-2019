@@ -12,7 +12,6 @@ import android.support.v4.widget.SwipeRefreshLayout
 import android.support.v7.widget.DividerItemDecoration
 import android.support.v7.widget.RecyclerView
 import android.view.MenuItem
-import android.view.View
 import android.widget.ProgressBar
 import com.squareup.moshi.Types
 import droidkaigi.github.io.challenge2019.data.db.ArticlePreferences
@@ -70,7 +69,7 @@ class MainActivity : BaseActivity() {
         viewModel.topStories.observe(this, Observer { resource ->
             when (resource) {
                 is Resource.Success -> {
-                    progressView.visibility = View.GONE
+                    progressView.visibility = Util.setVisibility(false)
                     swipeRefreshLayout.isRefreshing = false
                     storyAdapter.stories = resource.data.toMutableList()
                     storyAdapter.alreadyReadStories = ArticlePreferences.getArticleIds(this@MainActivity)
@@ -155,8 +154,7 @@ class MainActivity : BaseActivity() {
     override fun onOptionsItemSelected(item: MenuItem?): Boolean {
         return when (item?.itemId) {
             R.id.refresh -> {
-                progressView.visibility = Util.setVisibility(true)
-                loadTopStories()
+                loadTopStories(true)
                 return true
             }
             else -> super.onOptionsItemSelected(item)
