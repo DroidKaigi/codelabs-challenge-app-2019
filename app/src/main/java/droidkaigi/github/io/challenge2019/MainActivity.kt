@@ -76,6 +76,8 @@ class MainActivity : BaseActivity() {
                     storyAdapter.notifyDataSetChanged()
                 }
                 is Resource.Error -> {
+                    progressView.visibility = Util.setVisibility(false)
+                    swipeRefreshLayout.isRefreshing = false
                     showError(resource.t)
                 }
             }
