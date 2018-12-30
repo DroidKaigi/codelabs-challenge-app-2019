@@ -1,24 +1,22 @@
 package droidkaigi.github.io.challenge2019
 
-import android.annotation.SuppressLint
+import android.app.Activity
 import android.arch.lifecycle.Observer
-import android.os.AsyncTask
+import android.arch.lifecycle.ViewModelProviders
+import android.content.Intent
 import android.os.Bundle
 import android.support.v7.widget.DividerItemDecoration
 import android.support.v7.widget.RecyclerView
 import android.view.MenuItem
-import android.view.View
 import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.ProgressBar
 import com.squareup.moshi.Types
-import droidkaigi.github.io.challenge2019.data.repository.HackerNewsRepository
 import droidkaigi.github.io.challenge2019.data.repository.Resource
 import droidkaigi.github.io.challenge2019.data.repository.entity.Comment
 import droidkaigi.github.io.challenge2019.data.repository.entity.Story
-import java.util.concurrent.CountDownLatch
 
 class StoryActivity : BaseActivity() {
 
