@@ -1,6 +1,7 @@
 package droidkaigi.github.io.challenge2019
 
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -10,12 +11,15 @@ import android.os.Bundle
 import android.support.v4.widget.SwipeRefreshLayout
 import android.support.v7.widget.DividerItemDecoration
 import android.support.v7.widget.RecyclerView
+import android.util.Log
 import android.view.MenuItem
 import android.view.View
 import android.widget.ProgressBar
 import com.squareup.moshi.Types
 import droidkaigi.github.io.challenge2019.data.api.HackerNewsApi
 import droidkaigi.github.io.challenge2019.data.api.response.Item
+import droidkaigi.github.io.challenge2019.data.db.ArticlePreferences
+import droidkaigi.github.io.challenge2019.data.db.ArticlePreferences.Companion.saveArticleIds
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -64,7 +68,7 @@ class MainActivity : BaseActivity() {
                 val intent = Intent(this@MainActivity, StoryActivity::class.java).apply {
                     putExtra(StoryActivity.EXTRA_ITEM_JSON, itemJson)
                 }
-                startActivity(intent)
+                startActivityForResult(intent)
             },
             onClickMenuItem = { item, menuItemId ->
                 when (menuItemId) {
@@ -81,6 +85,7 @@ class MainActivity : BaseActivity() {
 
                                     storyAdapter.stories[index] = newItem
                                     runOnUiThread {
+                                        storyAdapter.alreadyReadStories = ArticlePreferences.getArticleIds(this@MainActivity)
                                         storyAdapter.notifyItemChanged(index)
                                     }
                                 }
@@ -92,7 +97,8 @@ class MainActivity : BaseActivity() {
                         })
                     }
                 }
-            }
+            },
+            alreadyReadStories = ArticlePreferences.getArticleIds(this)
         )
         recyclerView.adapter = storyAdapter
 
@@ -106,6 +112,7 @@ class MainActivity : BaseActivity() {
 
         if (savedStories != null) {
             storyAdapter.stories = savedStories.toMutableList()
+            storyAdapter.alreadyReadStories = ArticlePreferences.getArticleIds(this@MainActivity)
             storyAdapter.notifyDataSetChanged()
             return
         }
@@ -156,6 +163,7 @@ class MainActivity : BaseActivity() {
                             progressView.visibility = View.GONE
                             swipeRefreshLayout.isRefreshing = false
                             storyAdapter.stories = items.toMutableList()
+                            storyAdapter.alreadyReadStories = ArticlePreferences.getArticleIds(this@MainActivity)
                             storyAdapter.notifyDataSetChanged()
                         }
                     }
@@ -168,6 +176,21 @@ class MainActivity : BaseActivity() {
                 showError(t)
             }
         })
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        when(resultCode) {
+            Activity.RESULT_OK -> {
+                data?.getLongExtra(StoryActivity.READ_ARTICLE_ID, 0L)?.let { id ->
+                    if (id != 0L) {
+                        saveArticleIds(this, id.toString())
+                        storyAdapter.alreadyReadStories = ArticlePreferences.getArticleIds(this)
+                        storyAdapter.notifyDataSetChanged()
+                    }
+                }
+            }
+        }
+        super.onActivityResult(requestCode, resultCode, data)
     }
 
     override fun onOptionsItemSelected(item: MenuItem?): Boolean {

@@ -1,6 +1,8 @@
 package droidkaigi.github.io.challenge2019
 
 import android.annotation.SuppressLint
+import android.app.Activity
+import android.content.Intent
 import android.os.AsyncTask
 import android.os.Bundle
 import android.support.v7.widget.DividerItemDecoration
@@ -25,7 +27,7 @@ class StoryActivity : BaseActivity() {
 
     companion object {
         const val EXTRA_ITEM_JSON = "droidkaigi.github.io.challenge2019.EXTRA_ITEM_JSON"
-
+        const val READ_ARTICLE_ID = "read_article_id"
         private const val STATE_COMMENTS = "comments"
     }
 
@@ -165,6 +167,14 @@ class StoryActivity : BaseActivity() {
             R.id.refresh -> {
                 progressView.visibility = Util.setVisibility(true)
                 loadUrlAndComments()
+                return true
+            }
+            android.R.id.home -> {
+                val intent = Intent().apply {
+                    putExtra(READ_ARTICLE_ID, this@StoryActivity.item?.id)
+                }
+                setResult(Activity.RESULT_OK, intent)
+                finish()
                 return true
             }
             else -> super.onOptionsItemSelected(item)

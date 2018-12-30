@@ -11,7 +11,8 @@ import droidkaigi.github.io.challenge2019.databinding.ItemStoryBinding
 class StoryAdapter(
     var stories: MutableList<Item?>,
     private val onClickItem: ((Item) -> Unit)? = null,
-    private val onClickMenuItem: ((Item, Int) -> Unit)? = null
+    private val onClickMenuItem: ((Item, Int) -> Unit)? = null,
+    var alreadyReadStories: Set<String>
 ) : RecyclerView.Adapter<StoryAdapter.ViewHolder>() {
 
     class ViewHolder(val binding: ItemStoryBinding) : RecyclerView.ViewHolder(binding.root)
@@ -27,6 +28,12 @@ class StoryAdapter(
         val item = stories[position]
 
         if (item != null) {
+            holder.binding.alreadyRead = false
+            alreadyReadStories.forEach {id ->
+                if (id.toLong() == item.id) {
+                    holder.binding.alreadyRead = true
+                }
+            }
             holder.binding.item = item
             holder.binding.root.setOnClickListener {
                 onClickItem?.invoke(item)
