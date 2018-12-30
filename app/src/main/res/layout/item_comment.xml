@@ -9,7 +9,7 @@
 
         <variable
                 name="comment"
-                type="droidkaigi.github.io.challenge2019.data.repository.entity.Comment"
+                type="droidkaigi.github.io.challenge2019.model.Comment"
         />
 
         <import

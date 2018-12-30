@@ -1,8 +1,8 @@
 package droidkaigi.github.io.challenge2019.data.repository.mapper
 
 import droidkaigi.github.io.challenge2019.data.api.response.Item
-import droidkaigi.github.io.challenge2019.data.repository.entity.Comment
-import droidkaigi.github.io.challenge2019.data.repository.entity.Story
+import droidkaigi.github.io.challenge2019.model.Comment
+import droidkaigi.github.io.challenge2019.model.Story
 import java.util.*
 
 fun Item.toStory(): Story = Story(

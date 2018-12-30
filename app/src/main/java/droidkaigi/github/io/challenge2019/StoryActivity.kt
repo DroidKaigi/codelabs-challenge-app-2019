@@ -15,8 +15,8 @@ import android.webkit.WebViewClient
 import android.widget.ProgressBar
 import com.squareup.moshi.Types
 import droidkaigi.github.io.challenge2019.data.repository.Resource
-import droidkaigi.github.io.challenge2019.data.repository.entity.Comment
-import droidkaigi.github.io.challenge2019.data.repository.entity.Story
+import droidkaigi.github.io.challenge2019.model.Comment
+import droidkaigi.github.io.challenge2019.model.Story
 
 class StoryActivity : BaseActivity() {
 

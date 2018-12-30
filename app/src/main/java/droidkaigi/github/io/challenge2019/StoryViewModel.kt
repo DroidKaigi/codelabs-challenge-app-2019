@@ -3,8 +3,8 @@ package droidkaigi.github.io.challenge2019
 import android.arch.lifecycle.*
 import droidkaigi.github.io.challenge2019.data.repository.HackerNewsRepository
 import droidkaigi.github.io.challenge2019.data.repository.Resource
-import droidkaigi.github.io.challenge2019.data.repository.entity.Comment
-import droidkaigi.github.io.challenge2019.data.repository.entity.Story
+import droidkaigi.github.io.challenge2019.model.Comment
+import droidkaigi.github.io.challenge2019.model.Story
 
 class StoryViewModel : ViewModel() {
 

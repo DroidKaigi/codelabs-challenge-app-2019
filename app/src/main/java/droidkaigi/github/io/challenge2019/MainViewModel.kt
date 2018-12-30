@@ -6,7 +6,7 @@ import android.arch.lifecycle.Transformations
 import android.arch.lifecycle.ViewModel
 import droidkaigi.github.io.challenge2019.data.repository.HackerNewsRepository
 import droidkaigi.github.io.challenge2019.data.repository.Resource
-import droidkaigi.github.io.challenge2019.data.repository.entity.Story
+import droidkaigi.github.io.challenge2019.model.Story
 
 class MainViewModel : ViewModel() {
 

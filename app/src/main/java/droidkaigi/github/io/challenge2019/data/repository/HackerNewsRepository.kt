@@ -5,8 +5,8 @@ import android.arch.lifecycle.MutableLiveData
 import android.os.AsyncTask
 import droidkaigi.github.io.challenge2019.data.api.HackerNewsApi
 import droidkaigi.github.io.challenge2019.data.api.response.Item
-import droidkaigi.github.io.challenge2019.data.repository.entity.Comment
-import droidkaigi.github.io.challenge2019.data.repository.entity.Story
+import droidkaigi.github.io.challenge2019.model.Comment
+import droidkaigi.github.io.challenge2019.model.Story
 import droidkaigi.github.io.challenge2019.data.repository.mapper.toComment
 import droidkaigi.github.io.challenge2019.data.repository.mapper.toStory
 import retrofit2.Call

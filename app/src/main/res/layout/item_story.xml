@@ -9,7 +9,7 @@
 
         <variable
                 name="story"
-                type="droidkaigi.github.io.challenge2019.data.repository.entity.Story"
+                type="droidkaigi.github.io.challenge2019.model.Story"
         />
 
         <variable
