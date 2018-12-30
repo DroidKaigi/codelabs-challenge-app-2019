@@ -113,7 +113,7 @@ class MainActivity : BaseActivity() {
                 val intent = Intent(this@MainActivity, StoryActivity::class.java).apply {
                     putExtra(StoryActivity.EXTRA_ITEM_JSON, storyJson)
                 }
-                startActivity(intent)
+                startActivityForResult(intent)
             },
             onClickMenuItem = { story, menuItemId ->
                 when (menuItemId) {
