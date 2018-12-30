@@ -2,8 +2,8 @@ package droidkaigi.github.io.challenge2019
 
 import android.annotation.SuppressLint
 import android.app.Activity
-import android.content.Intent
 import android.arch.lifecycle.Observer
+import android.content.Intent
 import android.os.AsyncTask
 import android.os.Bundle
 import android.support.v7.widget.DividerItemDecoration
@@ -143,7 +143,7 @@ class StoryActivity : BaseActivity() {
             }
             android.R.id.home -> {
                 val intent = Intent().apply {
-                    putExtra(READ_ARTICLE_ID, this@StoryActivity.item?.id)
+                    putExtra(READ_ARTICLE_ID, this@StoryActivity.story?.id)
                 }
                 setResult(Activity.RESULT_OK, intent)
                 finish()
