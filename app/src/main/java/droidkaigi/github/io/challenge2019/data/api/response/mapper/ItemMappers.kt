@@ -1,6 +1,7 @@
 package droidkaigi.github.io.challenge2019.data.api.response.mapper
 
 import droidkaigi.github.io.challenge2019.data.api.response.Item
+import droidkaigi.github.io.challenge2019.data.db.entity.CommentEntity
 import droidkaigi.github.io.challenge2019.data.db.entity.CommentIdEntity
 import droidkaigi.github.io.challenge2019.data.db.entity.StoryEntity
 import java.util.*
@@ -24,3 +25,14 @@ fun Item.toCommentIdEntities(): List<CommentIdEntity> =
                 storyId = this.id
             )
         }
+
+fun Item.toCommentEntity(
+    storyId: Long
+): CommentEntity =
+  CommentEntity(
+      id = id,
+      storyId = storyId,
+      author = author,
+      text = text ?: "",
+      time = Date(time * 1000)
+  )

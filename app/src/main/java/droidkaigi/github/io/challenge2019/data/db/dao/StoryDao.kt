@@ -11,13 +11,19 @@ abstract class StoryDao {
     abstract fun getAllStories(): LiveData<List<StoryEntity>>
 
     @Query("SELECT * FROM story WHERE already_read = 1")
-    abstract fun getAlreadyReadStories(): LiveData<List<StoryEntity>>
+    abstract fun getAlreadyReadStories(): List<StoryEntity>
 
     @Query("DELETE FROM story")
     abstract fun deleteAll()
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     abstract fun insert(stories: List<StoryEntity>)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    abstract fun insert(story: StoryEntity)
+
+    @Query("SELECT * FROM story WHERE id = :id")
+    abstract fun byId(id: Long): LiveData<StoryEntity?>
 
     @Transaction
     open fun clearAndInsert(newStories: List<StoryEntity>) {

@@ -7,14 +7,14 @@ import android.arch.persistence.room.Room
 import droidkaigi.github.io.challenge2019.App
 import droidkaigi.github.io.challenge2019.data.api.HackerNewsApi
 import droidkaigi.github.io.challenge2019.data.api.response.Item
+import droidkaigi.github.io.challenge2019.data.api.response.mapper.toCommentEntity
 import droidkaigi.github.io.challenge2019.data.api.response.mapper.toCommentIdEntities
 import droidkaigi.github.io.challenge2019.data.api.response.mapper.toStoryEntity
 import droidkaigi.github.io.challenge2019.data.db.AppDatabase
 import droidkaigi.github.io.challenge2019.data.db.entity.mapper.toStory
-import droidkaigi.github.io.challenge2019.data.repository.mapper.toComment
-import droidkaigi.github.io.challenge2019.data.repository.mapper.toStory
-import droidkaigi.github.io.challenge2019.model.Comment
+import droidkaigi.github.io.challenge2019.data.db.entity.mapper.toStoryWithComments
 import droidkaigi.github.io.challenge2019.model.Story
+import droidkaigi.github.io.challenge2019.model.StoryWithComments
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -91,38 +91,79 @@ object HackerNewsRepository {
     }
 
     fun getStory(id: Long): LiveData<Resource<Story>> {
-        // This is not an optimal implementation, we'll fix it after
+        return MediatorLiveData<Resource<Story>>().apply {
+            addSource(refreshStory(id)) { resource -> resource?.let { value = it } }
+            addSource(db.storyDao().byId(id)) { storyEntity ->
+                storyEntity?.let { value = Resource.Success(it.toStory()) }
+            }
+        }
+    }
+
+    private fun refreshStory(id: Long): LiveData<Resource<Story>> {
         val liveData = MutableLiveData<Resource<Story>>().apply {
             postValue(Resource.Loading())
         }
 
-        GetItemsTask(executor, hackerNewsApi) { item ->
-            val resource: Resource<Story> = item.firstOrNull()?.let {
-                Resource.Success(it.toStory())
-            } ?: Resource.Error(Exception("failed to get story"))
-            liveData.postValue(resource)
+        GetItemsTask(executor, hackerNewsApi) { items ->
+            val item = items.firstOrNull()
+            if (item == null) {
+                liveData.postValue(Resource.Error(Exception("failed to get story")))
+                return@GetItemsTask
+            }
+
+            db.runInTransaction {
+                val alreadyRead = db.storyDao().getAlreadyReadStories()
+                    .find { it.id == id }?.alreadyRead ?: false
+                db.storyDao().insert(item.toStoryEntity(alreadyRead))
+            }
         }.execute(listOf(id))
 
         return liveData
     }
 
-    fun getComments(story: Story): LiveData<Resource<List<Comment?>>> {
-        // This is not an optimal implementation, we'll fix it after
-        val liveData = MutableLiveData<Resource<List<Comment?>>>().apply {
+    fun getStoryWithComments(storyId: Long): LiveData<Resource<StoryWithComments>> {
+        return MediatorLiveData<Resource<StoryWithComments>>().apply {
+            addSource(refreshStoryWithComments(storyId)) { resource -> resource?.let { value = it } }
+            addSource(db.storyCommentJoinDao().byStoryIdWithComments(storyId)) { storyWithCommentsEntity ->
+                storyWithCommentsEntity?.let { value = Resource.Success(it.toStoryWithComments()) }
+            }
+        }
+    }
+
+    private fun refreshStoryWithComments(storyId: Long): LiveData<Resource<StoryWithComments>> {
+        val liveData = MutableLiveData<Resource<StoryWithComments>>().apply {
             postValue(Resource.Loading())
         }
 
-        GetItemsTask(executor, hackerNewsApi) { items ->
-            val comments = items.map { it?.toComment(emptyList()) }
-            val resource: Resource<List<Comment?>> = if (!story.commentIds.isEmpty() && comments.all { it == null }) {
-                Resource.Error(Exception("failed to get all comments"))
-            } else {
-                Resource.Success(comments)
-            }
-            liveData.postValue(resource)
-        }.execute(story.commentIds)
+        executor.execute {
+            val commentIds = db.commentIdDao().byStoryId(storyId).map { it.id }
+            refreshComments(storyId, commentIds,
+                onSuccess = {},
+                onError = { error -> liveData.postValue(Resource.Error(error)) }
+            )
+        }
 
         return liveData
+    }
+
+    private fun refreshComments(
+        storyId: Long,
+        commentIds: List<Long>,
+        onSuccess: (() -> Unit)? = null,
+        onError: ((Exception) -> Unit)? = null
+    ) {
+        GetItemsTask(executor, hackerNewsApi) { items ->
+            if (!commentIds.isEmpty() && items.all { it == null }) {
+                onError?.invoke(Exception("failed to get all comments"))
+                return@GetItemsTask
+            }
+
+            val comments = items.mapNotNull { it?.toCommentEntity(storyId) }
+            db.runInTransaction {
+                db.commentDao().insert(comments)
+            }
+            onSuccess?.invoke()
+        }.execute(commentIds)
     }
 
     private class GetItemsTask(

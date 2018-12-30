@@ -16,7 +16,6 @@ import android.widget.ProgressBar
 import droidkaigi.github.io.challenge2019.data.db.ArticlePreferences
 import droidkaigi.github.io.challenge2019.data.db.ArticlePreferences.Companion.saveArticleIds
 import droidkaigi.github.io.challenge2019.data.repository.Resource
-import droidkaigi.github.io.challenge2019.model.Story
 
 class MainActivity : BaseActivity() {
 
@@ -25,8 +24,6 @@ class MainActivity : BaseActivity() {
     private lateinit var swipeRefreshLayout: SwipeRefreshLayout
 
     private lateinit var storyAdapter: StoryAdapter
-
-    private val storyJsonAdapter = moshi.adapter(Story::class.java)
 
     private val viewModel: MainViewModel by lazy {
         ViewModelProviders.of(this).get(MainViewModel::class.java)
@@ -98,9 +95,8 @@ class MainActivity : BaseActivity() {
         storyAdapter = StoryAdapter(
             stories = mutableListOf(),
             onClickStory = { story ->
-                val storyJson = storyJsonAdapter.toJson(story)
                 val intent = Intent(this@MainActivity, StoryActivity::class.java).apply {
-                    putExtra(StoryActivity.EXTRA_ITEM_JSON, storyJson)
+                    putExtra(StoryActivity.EXTRA_STORY_ID, story.id)
                 }
                 startActivityForResult(intent)
             },

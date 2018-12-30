@@ -1,6 +1,5 @@
 package droidkaigi.github.io.challenge2019.data.db.dao
 
-import android.arch.lifecycle.LiveData
 import android.arch.persistence.room.Dao
 import android.arch.persistence.room.Insert
 import android.arch.persistence.room.OnConflictStrategy
@@ -14,5 +13,5 @@ abstract class CommentIdDao {
     abstract fun insert(commentIds: List<CommentIdEntity>)
 
     @Query("SELECT * FROM comment_id WHERE story_id = :storyId")
-    abstract fun byStoryId(storyId: Long): LiveData<List<CommentIdEntity>>
+    abstract fun byStoryId(storyId: Long): List<CommentIdEntity>
 }
