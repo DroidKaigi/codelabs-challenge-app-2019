@@ -1,14 +1,20 @@
 package droidkaigi.github.io.challenge2019.data.repository
 
 import android.arch.lifecycle.LiveData
+import android.arch.lifecycle.MediatorLiveData
 import android.arch.lifecycle.MutableLiveData
-import android.os.AsyncTask
+import android.arch.persistence.room.Room
+import droidkaigi.github.io.challenge2019.App
 import droidkaigi.github.io.challenge2019.data.api.HackerNewsApi
 import droidkaigi.github.io.challenge2019.data.api.response.Item
-import droidkaigi.github.io.challenge2019.model.Comment
-import droidkaigi.github.io.challenge2019.model.Story
+import droidkaigi.github.io.challenge2019.data.api.response.mapper.toCommentIdEntities
+import droidkaigi.github.io.challenge2019.data.api.response.mapper.toStoryEntity
+import droidkaigi.github.io.challenge2019.data.db.AppDatabase
+import droidkaigi.github.io.challenge2019.data.db.entity.mapper.toStory
 import droidkaigi.github.io.challenge2019.data.repository.mapper.toComment
 import droidkaigi.github.io.challenge2019.data.repository.mapper.toStory
+import droidkaigi.github.io.challenge2019.model.Comment
+import droidkaigi.github.io.challenge2019.model.Story
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -16,6 +22,8 @@ import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CountDownLatch
+import java.util.concurrent.Executor
+import java.util.concurrent.Executors
 
 // Singleton
 object HackerNewsRepository {
@@ -28,9 +36,32 @@ object HackerNewsRepository {
             .create(HackerNewsApi::class.java)
     }
 
-    fun getTopStories(): LiveData<Resource<List<Story?>>> {
-        // This is not an optimal implementation, we'll fix it after
-        val liveData = MutableLiveData<Resource<List<Story?>>>().apply {
+    private val db: AppDatabase by lazy {
+        Room.databaseBuilder(
+            App.appContext,
+            AppDatabase::class.java,
+            "database"
+        ).build()
+    }
+
+    private val executor: Executor by lazy {
+        Executors.newCachedThreadPool()
+    }
+
+    fun getTopStories(): LiveData<Resource<List<Story>>> {
+        return MediatorLiveData<Resource<List<Story>>>().apply {
+            addSource(refreshTopStories()) { resource -> resource?.let { value = it } }
+            addSource(db.storyDao().getAllStories()) { storyEntities ->
+                storyEntities?.let {
+                    val stories = it.map { storyEntity -> storyEntity.toStory() }
+                    value = Resource.Success(stories)
+                }
+            }
+        }
+    }
+
+    private fun refreshTopStories(): LiveData<Resource<List<Story>>> {
+        val liveData = MutableLiveData<Resource<List<Story>>>().apply {
             postValue(Resource.Loading())
         }
 
@@ -40,15 +71,19 @@ object HackerNewsRepository {
                 if (!response.isSuccessful) return
 
                 response.body()?.let { itemIds ->
-                    GetItemsTask(hackerNewsApi) { items ->
-                        val stories = items.map { it?.toStory() }
-                        liveData.value = Resource.Success(stories)
-                    }.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, *itemIds.take(20).toTypedArray())
+                    GetItemsTask(executor, hackerNewsApi) { items ->
+                        val stories = items.mapNotNull { it?.toStoryEntity() }
+                        val commentIds = items.mapNotNull { it?.toCommentIdEntities() }.flatten()
+                        db.runInTransaction {
+                            db.storyDao().clearAndInsert(stories)
+                            db.commentIdDao().insert(commentIds)
+                        }
+                    }.execute(itemIds.take(20))
                 }
             }
 
             override fun onFailure(call: Call<List<Long>>, t: Throwable) {
-                liveData.value = Resource.Error(t)
+                liveData.postValue(Resource.Error(t))
             }
         })
 
@@ -61,11 +96,12 @@ object HackerNewsRepository {
             postValue(Resource.Loading())
         }
 
-        GetItemsTask(hackerNewsApi) { item ->
-            liveData.value = item.firstOrNull()?.let {
+        GetItemsTask(executor, hackerNewsApi) { item ->
+            val resource: Resource<Story> = item.firstOrNull()?.let {
                 Resource.Success(it.toStory())
             } ?: Resource.Error(Exception("failed to get story"))
-        }.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, id)
+            liveData.postValue(resource)
+        }.execute(listOf(id))
 
         return liveData
     }
@@ -76,53 +112,53 @@ object HackerNewsRepository {
             postValue(Resource.Loading())
         }
 
-        GetItemsTask(hackerNewsApi) { items ->
+        GetItemsTask(executor, hackerNewsApi) { items ->
             val comments = items.map { it?.toComment(emptyList()) }
-            liveData.value = if (!story.commentIds.isEmpty() && comments.all { it == null }) {
+            val resource: Resource<List<Comment?>> = if (!story.commentIds.isEmpty() && comments.all { it == null }) {
                 Resource.Error(Exception("failed to get all comments"))
             } else {
                 Resource.Success(comments)
             }
-        }.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, *story.commentIds.toTypedArray())
+            liveData.postValue(resource)
+        }.execute(story.commentIds)
 
         return liveData
     }
 
     private class GetItemsTask(
+        private val executor: Executor,
         private val hackerNewsApi: HackerNewsApi,
         private val onPostExecute: (List<Item?>) -> Unit
-    ) : AsyncTask<Long, Unit, List<Item?>>() {
+    ) {
 
-        override fun doInBackground(vararg itemIds: Long?): List<Item?> {
-            val ids = itemIds.mapNotNull { it }
-            val itemMap = ConcurrentHashMap<Long, Item?>()
-            val latch = CountDownLatch(ids.size)
+        fun execute(itemIds: List<Long>) {
+            executor.execute {
+                val ids = itemIds.map { it }
+                val itemMap = ConcurrentHashMap<Long, Item>()
+                val latch = CountDownLatch(ids.size)
 
-            ids.forEach { id ->
-                hackerNewsApi.getItem(id).enqueue(object : Callback<Item> {
+                ids.forEach { id ->
+                    hackerNewsApi.getItem(id).enqueue(object : Callback<Item> {
 
-                    override fun onResponse(call: Call<Item>, response: Response<Item>) {
-                        response.body()?.let { item -> itemMap[id] = item }
-                        latch.countDown()
-                    }
+                        override fun onResponse(call: Call<Item>, response: Response<Item>) {
+                            response.body()?.let { item -> itemMap[id] = item }
+                            latch.countDown()
+                        }
 
-                    override fun onFailure(call: Call<Item>, t: Throwable) {
-                        latch.countDown()
-                    }
-                })
+                        override fun onFailure(call: Call<Item>, t: Throwable) {
+                            latch.countDown()
+                        }
+                    })
+                }
+
+                try {
+                    latch.await()
+                } catch (e: InterruptedException) {
+                    // do nothing
+                }
+
+                onPostExecute.invoke(ids.map { itemMap[it] })
             }
-
-            try {
-                latch.await()
-            } catch (e: InterruptedException) {
-                return emptyList()
-            }
-
-            return ids.map { itemMap[it] }
-        }
-
-        override fun onPostExecute(result: List<Item?>) {
-            onPostExecute.invoke(result)
         }
     }
 }

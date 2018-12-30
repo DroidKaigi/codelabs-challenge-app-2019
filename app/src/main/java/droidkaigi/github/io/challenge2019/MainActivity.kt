@@ -13,17 +13,12 @@ import android.support.v7.widget.DividerItemDecoration
 import android.support.v7.widget.RecyclerView
 import android.view.MenuItem
 import android.widget.ProgressBar
-import com.squareup.moshi.Types
 import droidkaigi.github.io.challenge2019.data.db.ArticlePreferences
 import droidkaigi.github.io.challenge2019.data.db.ArticlePreferences.Companion.saveArticleIds
 import droidkaigi.github.io.challenge2019.data.repository.Resource
 import droidkaigi.github.io.challenge2019.model.Story
 
 class MainActivity : BaseActivity() {
-
-    companion object {
-        private const val STATE_STORIES = "stories"
-    }
 
     private lateinit var recyclerView: RecyclerView
     private lateinit var progressView: ProgressBar
@@ -32,8 +27,6 @@ class MainActivity : BaseActivity() {
     private lateinit var storyAdapter: StoryAdapter
 
     private val storyJsonAdapter = moshi.adapter(Story::class.java)
-    private val storiesJsonAdapter =
-        moshi.adapter<List<Story?>>(Types.newParameterizedType(List::class.java, Story::class.java))
 
     private val viewModel: MainViewModel by lazy {
         ViewModelProviders.of(this).get(MainViewModel::class.java)
@@ -52,19 +45,6 @@ class MainActivity : BaseActivity() {
         setupRecyclerView()
 
         swipeRefreshLayout.setOnRefreshListener { loadTopStories() }
-
-        val savedStories = savedInstanceState?.let { bundle ->
-            bundle.getString(STATE_STORIES)?.let { storiesJson ->
-                storiesJsonAdapter.fromJson(storiesJson)
-            }
-        }
-
-        if (savedStories != null) {
-            storyAdapter.stories = savedStories.toMutableList()
-            storyAdapter.alreadyReadStories = ArticlePreferences.getArticleIds(this@MainActivity)
-            storyAdapter.notifyDataSetChanged()
-            return
-        }
 
         viewModel.topStories.observe(this, Observer { resource ->
             when (resource) {
@@ -161,13 +141,5 @@ class MainActivity : BaseActivity() {
             }
             else -> super.onOptionsItemSelected(item)
         }
-    }
-
-    override fun onSaveInstanceState(outState: Bundle?) {
-        outState?.apply {
-            putString(STATE_STORIES, storiesJsonAdapter.toJson(storyAdapter.stories))
-        }
-
-        super.onSaveInstanceState(outState)
     }
 }

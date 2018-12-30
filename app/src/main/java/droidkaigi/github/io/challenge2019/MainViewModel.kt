@@ -11,7 +11,7 @@ import droidkaigi.github.io.challenge2019.model.Story
 class MainViewModel : ViewModel() {
 
     private val topStoriesRequest = MutableLiveData<Unit>()
-    val topStories: LiveData<Resource<List<Story?>>> =
+    val topStories: LiveData<Resource<List<Story>>> =
         Transformations.switchMap(topStoriesRequest) {
             HackerNewsRepository.getTopStories()
         }
