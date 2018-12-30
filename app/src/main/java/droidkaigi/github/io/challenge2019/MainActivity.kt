@@ -44,10 +44,17 @@ class MainActivity : BaseActivity() {
 
         setupRecyclerView()
 
-        swipeRefreshLayout.setOnRefreshListener { loadTopStories() }
+        swipeRefreshLayout.setOnRefreshListener {
+            viewModel.loadTopStories()
+        }
 
         viewModel.topStories.observe(this, Observer { resource ->
             when (resource) {
+                is Resource.Loading -> {
+                    if (!swipeRefreshLayout.isRefreshing) {
+                        progressView.visibility = Util.setVisibility(true)
+                    }
+                }
                 is Resource.Success -> {
                     progressView.visibility = Util.setVisibility(false)
                     swipeRefreshLayout.isRefreshing = false
@@ -82,7 +89,7 @@ class MainActivity : BaseActivity() {
             }
         })
 
-        loadTopStories(true)
+        viewModel.loadTopStories()
     }
 
     private fun setupRecyclerView() {
@@ -113,11 +120,6 @@ class MainActivity : BaseActivity() {
         recyclerView.adapter = storyAdapter
     }
 
-    private fun loadTopStories(showProgressView: Boolean = false) {
-        if (showProgressView) progressView.visibility = Util.setVisibility(true)
-        viewModel.loadTopStories()
-    }
-
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         when(resultCode) {
             Activity.RESULT_OK -> {
@@ -136,7 +138,7 @@ class MainActivity : BaseActivity() {
     override fun onOptionsItemSelected(item: MenuItem?): Boolean {
         return when (item?.itemId) {
             R.id.refresh -> {
-                loadTopStories(true)
+                viewModel.loadTopStories()
                 return true
             }
             else -> super.onOptionsItemSelected(item)
