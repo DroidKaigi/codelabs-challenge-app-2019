@@ -53,6 +53,7 @@ class MainActivity : BaseActivity() {
                     }
                 }
                 is Resource.Cache -> {
+                    if (storyAdapter.stories == resource.data) return@Observer
                     storyAdapter.stories = resource.data.toMutableList()
                     storyAdapter.alreadyReadStories = ArticlePreferences.getArticleIds(this@MainActivity)
                     storyAdapter.notifyDataSetChanged()
@@ -76,6 +77,7 @@ class MainActivity : BaseActivity() {
                     val index = storyAdapter.stories.indexOf(story)
                     if (index == -1) return@Observer
 
+                    if (storyAdapter.stories[index] == story) return@Observer
                     storyAdapter.stories[index] = story
                     runOnUiThread {
                         storyAdapter.alreadyReadStories = ArticlePreferences.getArticleIds(this@MainActivity)

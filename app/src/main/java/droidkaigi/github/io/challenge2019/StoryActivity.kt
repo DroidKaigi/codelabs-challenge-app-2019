@@ -57,6 +57,7 @@ class StoryActivity : BaseActivity() {
             when(resource) {
                 is Resource.Cache -> {
                     loadUrl(resource.data.story.url)
+                    if (commentAdapter.comments == resource.data.comments) return@Observer
                     commentAdapter.comments = resource.data.comments
                     commentAdapter.notifyDataSetChanged()
                 }
