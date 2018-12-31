@@ -1,9 +1,7 @@
 package droidkaigi.github.io.challenge2019
 
-import android.app.Activity
 import android.arch.lifecycle.Observer
 import android.arch.lifecycle.ViewModelProviders
-import android.content.Intent
 import android.os.Bundle
 import android.support.v7.widget.DividerItemDecoration
 import android.support.v7.widget.RecyclerView
@@ -13,17 +11,12 @@ import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.ProgressBar
-import com.squareup.moshi.Types
 import droidkaigi.github.io.challenge2019.data.repository.Resource
-import droidkaigi.github.io.challenge2019.data.repository.entity.Comment
-import droidkaigi.github.io.challenge2019.data.repository.entity.Story
 
 class StoryActivity : BaseActivity() {
 
     companion object {
-        const val EXTRA_ITEM_JSON = "droidkaigi.github.io.challenge2019.EXTRA_ITEM_JSON"
-        const val READ_ARTICLE_ID = "read_article_id"
-        private const val STATE_COMMENTS = "comments"
+        const val EXTRA_STORY_ID = "droidkaigi.github.io.challenge2019.EXTRA_STORY_ID"
     }
 
     private lateinit var webView: WebView
@@ -32,11 +25,9 @@ class StoryActivity : BaseActivity() {
 
     private lateinit var commentAdapter: CommentAdapter
 
-    private val storyJsonAdapter = moshi.adapter(Story::class.java)
-    private val commentsJsonAdapter =
-        moshi.adapter<List<Comment?>>(Types.newParameterizedType(List::class.java, Comment::class.java))
-
-    private var story: Story? = null
+    private val storyId: Long by lazy {
+        intent.getLongExtra(EXTRA_STORY_ID, 0L)
+    }
 
     private val viewModel: StoryViewModel by lazy {
         ViewModelProviders.of(this).get(StoryViewModel::class.java)
@@ -52,43 +43,30 @@ class StoryActivity : BaseActivity() {
         recyclerView = findViewById(R.id.comment_recycler)
         progressView = findViewById(R.id.progress)
 
-        story = intent.getStringExtra(EXTRA_ITEM_JSON)?.let {
-            storyJsonAdapter.fromJson(it)
-        }
-
         setupRecyclerView()
         setupWebView()
-
-        val savedComments = savedInstanceState?.let { bundle ->
-            bundle.getString(STATE_COMMENTS)?.let { itemsJson ->
-                commentsJsonAdapter.fromJson(itemsJson)
-            }
-        }
-
-        if (savedComments != null) {
-            commentAdapter.comments = savedComments
-            commentAdapter.notifyDataSetChanged()
-            webView.loadUrl(story!!.url)
-            return
-        }
 
         viewModel.isLoading.observe(this, Observer { isLoading ->
             progressView.visibility = Util.setVisibility(isLoading == true)
         })
 
-        viewModel.comments.observe(this, Observer { resource ->
-            when (resource) {
-                is Resource.Success -> {
-                    commentAdapter.comments = resource.data
+        viewModel.storyWithComments.observe(this, Observer { resource ->
+            when(resource) {
+                is Resource.Cache -> {
+                    loadUrlIfNeeded(resource.data.story.url)
+                    if (commentAdapter.comments == resource.data.comments) return@Observer
+                    commentAdapter.comments = resource.data.comments
                     commentAdapter.notifyDataSetChanged()
                 }
+
                 is Resource.Error -> {
                     showError(resource.t)
                 }
             }
         })
 
-        loadUrlAndComments()
+        viewModel.loadStoryWithComments(storyId)
+        viewModel.markAlreadyRead(storyId)
     }
 
     private fun setupRecyclerView() {
@@ -112,38 +90,20 @@ class StoryActivity : BaseActivity() {
         }
     }
 
-    private fun loadUrlAndComments() {
-        val story = this.story ?: return
+    private fun loadUrlIfNeeded(url: String) {
+        if (url == webView.url) return
 
         viewModel.onStartWebPageLoading()
-        webView.loadUrl(story.url)
-
-        viewModel.loadComments(story)
+        webView.loadUrl(url)
     }
 
     override fun onOptionsItemSelected(item: MenuItem?): Boolean {
         return when (item?.itemId) {
             R.id.refresh -> {
-                loadUrlAndComments()
-                return true
-            }
-            android.R.id.home -> {
-                val intent = Intent().apply {
-                    putExtra(READ_ARTICLE_ID, this@StoryActivity.story?.id)
-                }
-                setResult(Activity.RESULT_OK, intent)
-                finish()
+                viewModel.loadStoryWithComments(storyId)
                 return true
             }
             else -> super.onOptionsItemSelected(item)
         }
-    }
-
-    override fun onSaveInstanceState(outState: Bundle?) {
-        outState?.apply {
-            putString(STATE_COMMENTS, commentsJsonAdapter.toJson(commentAdapter.comments))
-        }
-
-        super.onSaveInstanceState(outState)
     }
 }

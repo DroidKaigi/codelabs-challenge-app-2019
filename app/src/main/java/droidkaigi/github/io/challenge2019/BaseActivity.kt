@@ -1,25 +1,13 @@
 package droidkaigi.github.io.challenge2019
 
-import android.content.Intent
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.widget.Toast
-import com.squareup.moshi.Moshi
-import com.squareup.moshi.adapters.Rfc3339DateJsonAdapter
-import java.util.*
 
 abstract class BaseActivity : AppCompatActivity() {
-
-    companion object {
-        const val ACTIVITY_REQUEST = 1
-    }
-
-    internal val moshi = Moshi.Builder()
-        .add(Date::class.java, Rfc3339DateJsonAdapter())
-        .build()
 
     abstract fun getContentView(): Int
 
@@ -45,12 +33,6 @@ abstract class BaseActivity : AppCompatActivity() {
                 return true
             }
             else -> super.onOptionsItemSelected(item)
-        }
-    }
-
-    fun startActivityForResult(intent: Intent?) {
-        intent?.let { intent2 ->
-            startActivityForResult(intent2, ACTIVITY_REQUEST)
         }
     }
 }

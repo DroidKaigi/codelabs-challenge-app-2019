@@ -1,6 +1,5 @@
 package droidkaigi.github.io.challenge2019
 
-import android.app.Activity
 import android.arch.lifecycle.Observer
 import android.arch.lifecycle.ViewModelProviders
 import android.content.ClipData
@@ -13,27 +12,15 @@ import android.support.v7.widget.DividerItemDecoration
 import android.support.v7.widget.RecyclerView
 import android.view.MenuItem
 import android.widget.ProgressBar
-import com.squareup.moshi.Types
-import droidkaigi.github.io.challenge2019.data.db.ArticlePreferences
-import droidkaigi.github.io.challenge2019.data.db.ArticlePreferences.Companion.saveArticleIds
 import droidkaigi.github.io.challenge2019.data.repository.Resource
-import droidkaigi.github.io.challenge2019.data.repository.entity.Story
 
 class MainActivity : BaseActivity() {
-
-    companion object {
-        private const val STATE_STORIES = "stories"
-    }
 
     private lateinit var recyclerView: RecyclerView
     private lateinit var progressView: ProgressBar
     private lateinit var swipeRefreshLayout: SwipeRefreshLayout
 
     private lateinit var storyAdapter: StoryAdapter
-
-    private val storyJsonAdapter = moshi.adapter(Story::class.java)
-    private val storiesJsonAdapter =
-        moshi.adapter<List<Story?>>(Types.newParameterizedType(List::class.java, Story::class.java))
 
     private val viewModel: MainViewModel by lazy {
         ViewModelProviders.of(this).get(MainViewModel::class.java)
@@ -51,29 +38,25 @@ class MainActivity : BaseActivity() {
 
         setupRecyclerView()
 
-        swipeRefreshLayout.setOnRefreshListener { loadTopStories() }
-
-        val savedStories = savedInstanceState?.let { bundle ->
-            bundle.getString(STATE_STORIES)?.let { storiesJson ->
-                storiesJsonAdapter.fromJson(storiesJson)
-            }
-        }
-
-        if (savedStories != null) {
-            storyAdapter.stories = savedStories.toMutableList()
-            storyAdapter.alreadyReadStories = ArticlePreferences.getArticleIds(this@MainActivity)
-            storyAdapter.notifyDataSetChanged()
-            return
+        swipeRefreshLayout.setOnRefreshListener {
+            viewModel.loadTopStories()
         }
 
         viewModel.topStories.observe(this, Observer { resource ->
             when (resource) {
+                is Resource.Loading -> {
+                    if (!swipeRefreshLayout.isRefreshing) {
+                        progressView.visibility = Util.setVisibility(true)
+                    }
+                }
+                is Resource.Cache -> {
+                    if (storyAdapter.stories == resource.data) return@Observer
+                    storyAdapter.stories = resource.data.toMutableList()
+                    storyAdapter.notifyDataSetChanged()
+                }
                 is Resource.Success -> {
                     progressView.visibility = Util.setVisibility(false)
                     swipeRefreshLayout.isRefreshing = false
-                    storyAdapter.stories = resource.data.toMutableList()
-                    storyAdapter.alreadyReadStories = ArticlePreferences.getArticleIds(this@MainActivity)
-                    storyAdapter.notifyDataSetChanged()
                 }
                 is Resource.Error -> {
                     progressView.visibility = Util.setVisibility(false)
@@ -85,14 +68,14 @@ class MainActivity : BaseActivity() {
 
         viewModel.story.observe(this, Observer { resource ->
             when (resource) {
-                is Resource.Success -> {
+                is Resource.Cache -> {
                     val story = resource.data
                     val index = storyAdapter.stories.indexOf(story)
                     if (index == -1) return@Observer
 
+                    if (storyAdapter.stories[index] == story) return@Observer
                     storyAdapter.stories[index] = story
                     runOnUiThread {
-                        storyAdapter.alreadyReadStories = ArticlePreferences.getArticleIds(this@MainActivity)
                         storyAdapter.notifyItemChanged(index)
                     }
                 }
@@ -102,7 +85,7 @@ class MainActivity : BaseActivity() {
             }
         })
 
-        loadTopStories(true)
+        viewModel.loadTopStories()
     }
 
     private fun setupRecyclerView() {
@@ -111,11 +94,10 @@ class MainActivity : BaseActivity() {
         storyAdapter = StoryAdapter(
             stories = mutableListOf(),
             onClickStory = { story ->
-                val storyJson = storyJsonAdapter.toJson(story)
                 val intent = Intent(this@MainActivity, StoryActivity::class.java).apply {
-                    putExtra(StoryActivity.EXTRA_ITEM_JSON, storyJson)
+                    putExtra(StoryActivity.EXTRA_STORY_ID, story.id)
                 }
-                startActivityForResult(intent)
+                startActivity(intent)
             },
             onClickMenuItem = { story, menuItemId ->
                 when (menuItemId) {
@@ -127,47 +109,18 @@ class MainActivity : BaseActivity() {
                         viewModel.loadStory(story.id)
                     }
                 }
-            },
-            alreadyReadStories = ArticlePreferences.getArticleIds(this)
+            }
         )
         recyclerView.adapter = storyAdapter
-    }
-
-    private fun loadTopStories(showProgressView: Boolean = false) {
-        if (showProgressView) progressView.visibility = Util.setVisibility(true)
-        viewModel.loadTopStories()
-    }
-
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        when(resultCode) {
-            Activity.RESULT_OK -> {
-                data?.getLongExtra(StoryActivity.READ_ARTICLE_ID, 0L)?.let { id ->
-                    if (id != 0L) {
-                        saveArticleIds(this, id.toString())
-                        storyAdapter.alreadyReadStories = ArticlePreferences.getArticleIds(this)
-                        storyAdapter.notifyDataSetChanged()
-                    }
-                }
-            }
-        }
-        super.onActivityResult(requestCode, resultCode, data)
     }
 
     override fun onOptionsItemSelected(item: MenuItem?): Boolean {
         return when (item?.itemId) {
             R.id.refresh -> {
-                loadTopStories(true)
+                viewModel.loadTopStories()
                 return true
             }
             else -> super.onOptionsItemSelected(item)
         }
-    }
-
-    override fun onSaveInstanceState(outState: Bundle?) {
-        outState?.apply {
-            putString(STATE_STORIES, storiesJsonAdapter.toJson(storyAdapter.stories))
-        }
-
-        super.onSaveInstanceState(outState)
     }
 }
