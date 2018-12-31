@@ -1,6 +1,5 @@
 package droidkaigi.github.io.challenge2019
 
-import android.app.Activity
 import android.arch.lifecycle.Observer
 import android.arch.lifecycle.ViewModelProviders
 import android.content.ClipData
@@ -13,8 +12,6 @@ import android.support.v7.widget.DividerItemDecoration
 import android.support.v7.widget.RecyclerView
 import android.view.MenuItem
 import android.widget.ProgressBar
-import droidkaigi.github.io.challenge2019.data.db.ArticlePreferences
-import droidkaigi.github.io.challenge2019.data.db.ArticlePreferences.Companion.saveArticleIds
 import droidkaigi.github.io.challenge2019.data.repository.Resource
 
 class MainActivity : BaseActivity() {
@@ -55,7 +52,6 @@ class MainActivity : BaseActivity() {
                 is Resource.Cache -> {
                     if (storyAdapter.stories == resource.data) return@Observer
                     storyAdapter.stories = resource.data.toMutableList()
-                    storyAdapter.alreadyReadStories = ArticlePreferences.getArticleIds(this@MainActivity)
                     storyAdapter.notifyDataSetChanged()
                 }
                 is Resource.Success -> {
@@ -80,7 +76,6 @@ class MainActivity : BaseActivity() {
                     if (storyAdapter.stories[index] == story) return@Observer
                     storyAdapter.stories[index] = story
                     runOnUiThread {
-                        storyAdapter.alreadyReadStories = ArticlePreferences.getArticleIds(this@MainActivity)
                         storyAdapter.notifyItemChanged(index)
                     }
                 }
@@ -102,7 +97,7 @@ class MainActivity : BaseActivity() {
                 val intent = Intent(this@MainActivity, StoryActivity::class.java).apply {
                     putExtra(StoryActivity.EXTRA_STORY_ID, story.id)
                 }
-                startActivityForResult(intent)
+                startActivity(intent)
             },
             onClickMenuItem = { story, menuItemId ->
                 when (menuItemId) {
@@ -114,25 +109,9 @@ class MainActivity : BaseActivity() {
                         viewModel.loadStory(story.id)
                     }
                 }
-            },
-            alreadyReadStories = ArticlePreferences.getArticleIds(this)
+            }
         )
         recyclerView.adapter = storyAdapter
-    }
-
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        when(resultCode) {
-            Activity.RESULT_OK -> {
-                data?.getLongExtra(StoryActivity.READ_ARTICLE_ID, 0L)?.let { id ->
-                    if (id != 0L) {
-                        saveArticleIds(this, id.toString())
-                        storyAdapter.alreadyReadStories = ArticlePreferences.getArticleIds(this)
-                        storyAdapter.notifyDataSetChanged()
-                    }
-                }
-            }
-        }
-        super.onActivityResult(requestCode, resultCode, data)
     }
 
     override fun onOptionsItemSelected(item: MenuItem?): Boolean {

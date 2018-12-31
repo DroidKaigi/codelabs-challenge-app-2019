@@ -1,9 +1,7 @@
 package droidkaigi.github.io.challenge2019
 
-import android.app.Activity
 import android.arch.lifecycle.Observer
 import android.arch.lifecycle.ViewModelProviders
-import android.content.Intent
 import android.os.Bundle
 import android.support.v7.widget.DividerItemDecoration
 import android.support.v7.widget.RecyclerView
@@ -19,7 +17,6 @@ class StoryActivity : BaseActivity() {
 
     companion object {
         const val EXTRA_STORY_ID = "droidkaigi.github.io.challenge2019.EXTRA_STORY_ID"
-        const val READ_ARTICLE_ID = "read_article_id"
     }
 
     private lateinit var webView: WebView
@@ -56,7 +53,7 @@ class StoryActivity : BaseActivity() {
         viewModel.storyWithComments.observe(this, Observer { resource ->
             when(resource) {
                 is Resource.Cache -> {
-                    loadUrl(resource.data.story.url)
+                    loadUrlIfNeeded(resource.data.story.url)
                     if (commentAdapter.comments == resource.data.comments) return@Observer
                     commentAdapter.comments = resource.data.comments
                     commentAdapter.notifyDataSetChanged()
@@ -69,6 +66,7 @@ class StoryActivity : BaseActivity() {
         })
 
         viewModel.loadStoryWithComments(storyId)
+        viewModel.markAlreadyRead(storyId)
     }
 
     private fun setupRecyclerView() {
@@ -92,7 +90,7 @@ class StoryActivity : BaseActivity() {
         }
     }
 
-    private fun loadUrl(url: String) {
+    private fun loadUrlIfNeeded(url: String) {
         if (url == webView.url) return
 
         viewModel.onStartWebPageLoading()
@@ -103,14 +101,6 @@ class StoryActivity : BaseActivity() {
         return when (item?.itemId) {
             R.id.refresh -> {
                 viewModel.loadStoryWithComments(storyId)
-                return true
-            }
-            android.R.id.home -> {
-                val intent = Intent().apply {
-                    putExtra(READ_ARTICLE_ID, storyId)
-                }
-                setResult(Activity.RESULT_OK, intent)
-                finish()
                 return true
             }
             else -> super.onOptionsItemSelected(item)

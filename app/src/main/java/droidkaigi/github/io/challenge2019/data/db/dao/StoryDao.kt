@@ -28,6 +28,9 @@ abstract class StoryDao {
     @Query("SELECT * FROM story WHERE id = :id")
     abstract fun byId(id: Long): StoryEntity?
 
+    @Update
+    abstract fun update(story: StoryEntity)
+
     @Transaction
     open fun clearAndInsert(newStories: List<StoryEntity>) {
         deleteAll()

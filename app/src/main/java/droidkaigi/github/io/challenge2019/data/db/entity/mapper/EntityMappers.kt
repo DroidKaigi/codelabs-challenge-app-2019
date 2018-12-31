@@ -12,11 +12,11 @@ fun StoryEntity.toStory(): Story =
         author = author,
         descendants = descendants,
         id = id,
-        commentIds = emptyList(), // TODO: delete
         score = score,
         time = time,
         title = title,
-        url = url
+        url = url,
+        alreadyRead = alreadyRead
     )
 
 fun CommentEntity.toComment(

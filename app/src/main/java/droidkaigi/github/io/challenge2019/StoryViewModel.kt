@@ -27,4 +27,5 @@ class StoryViewModel : ViewModel() {
     fun onStartWebPageLoading() = isWebPageLoadingInput.postValue(true)
     fun onFinishWebPageLoading() = isWebPageLoadingInput.postValue(false)
     fun onErrorWebPageLoading() = isWebPageLoadingInput.postValue(false)
+    fun markAlreadyRead(storyId: Long) = HackerNewsRepository.markStoryAlreadyRead(storyId)
 }

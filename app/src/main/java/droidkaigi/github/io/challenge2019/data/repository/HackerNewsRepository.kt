@@ -72,8 +72,11 @@ object HackerNewsRepository {
 
                 response.body()?.let { itemIds ->
                     GetItemsTask(executor, hackerNewsApi) { items ->
+                        val alreadyReadStories = db.storyDao().getAlreadyReadStories()
                         val stories = items.mapIndexedNotNull { index, item ->
-                            item?.toStoryEntity(order = index)
+                            val alreadyRead = alreadyReadStories
+                                .find { it.id == item?.id }?.alreadyRead ?: false
+                            item?.toStoryEntity(order = index, alreadyRead = alreadyRead)
                         }
                         val commentIds = items.mapNotNull { it?.toCommentIdEntities() }.flatten()
                         db.runInTransaction {
@@ -116,7 +119,7 @@ object HackerNewsRepository {
 
             db.runInTransaction {
                 val oldStory = db.storyDao().byId(id) ?: return@runInTransaction
-                db.storyDao().insert(item.toStoryEntity(oldStory.order, oldStory.alreadyRead))
+                db.storyDao().update(item.toStoryEntity(oldStory.order, oldStory.alreadyRead))
             }
             liveData.postValue(Resource.Success())
         }.execute(listOf(id))
@@ -167,6 +170,16 @@ object HackerNewsRepository {
             }
             onSuccess?.invoke()
         }.execute(commentIds)
+    }
+
+    fun markStoryAlreadyRead(storyId: Long) {
+        executor.execute {
+            db.runInTransaction {
+                val story = db.storyDao().byId(storyId) ?: return@runInTransaction
+                story.alreadyRead = true
+                db.storyDao().update(story)
+            }
+        }
     }
 
     private class GetItemsTask(
