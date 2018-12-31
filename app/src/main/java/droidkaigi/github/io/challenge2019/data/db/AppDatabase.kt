@@ -18,7 +18,7 @@ import droidkaigi.github.io.challenge2019.data.db.entity.StoryEntity
         CommentIdEntity::class,
         CommentEntity::class
     ],
-    version = 1
+    version = 2
 )
 @TypeConverters(DateConverter::class)
 abstract class AppDatabase : RoomDatabase() {

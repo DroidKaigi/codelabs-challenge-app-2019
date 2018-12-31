@@ -72,7 +72,9 @@ object HackerNewsRepository {
 
                 response.body()?.let { itemIds ->
                     GetItemsTask(executor, hackerNewsApi) { items ->
-                        val stories = items.mapNotNull { it?.toStoryEntity() }
+                        val stories = items.mapIndexedNotNull { index, item ->
+                            item?.toStoryEntity(order = index)
+                        }
                         val commentIds = items.mapNotNull { it?.toCommentIdEntities() }.flatten()
                         db.runInTransaction {
                             db.storyDao().clearAndInsert(stories)
@@ -94,7 +96,7 @@ object HackerNewsRepository {
     fun getStory(id: Long): LiveData<Resource<Story>> {
         return MediatorLiveData<Resource<Story>>().apply {
             addSource(refreshStory(id)) { resource -> resource?.let { value = it } }
-            addSource(db.storyDao().byId(id)) { storyEntity ->
+            addSource(db.storyDao().byIdAsLive(id)) { storyEntity ->
                 storyEntity?.let { value = Resource.Cache(it.toStory()) }
             }
         }
@@ -113,9 +115,8 @@ object HackerNewsRepository {
             }
 
             db.runInTransaction {
-                val alreadyRead = db.storyDao().getAlreadyReadStories()
-                    .find { it.id == id }?.alreadyRead ?: false
-                db.storyDao().insert(item.toStoryEntity(alreadyRead))
+                val oldStory = db.storyDao().byId(id) ?: return@runInTransaction
+                db.storyDao().insert(item.toStoryEntity(oldStory.order, oldStory.alreadyRead))
             }
             liveData.postValue(Resource.Success())
         }.execute(listOf(id))

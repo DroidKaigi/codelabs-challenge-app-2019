@@ -18,5 +18,6 @@ data class StoryEntity(
     var score: Int,
     var time: Date,
     var title: String,
-    var url: String
+    var url: String,
+    var order: Int
 )

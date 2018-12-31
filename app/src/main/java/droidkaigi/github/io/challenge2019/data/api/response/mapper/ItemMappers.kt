@@ -6,7 +6,10 @@ import droidkaigi.github.io.challenge2019.data.db.entity.CommentIdEntity
 import droidkaigi.github.io.challenge2019.data.db.entity.StoryEntity
 import java.util.*
 
-fun Item.toStoryEntity(alreadyRead: Boolean = false): StoryEntity =
+fun Item.toStoryEntity(
+    order: Int,
+    alreadyRead: Boolean = false
+): StoryEntity =
     StoryEntity(
         id = id,
         alreadyRead = alreadyRead,
@@ -15,24 +18,25 @@ fun Item.toStoryEntity(alreadyRead: Boolean = false): StoryEntity =
         score = score,
         time = Date(time * 1000),
         title = title,
-        url = url
+        url = url,
+        order = order
     )
 
 fun Item.toCommentIdEntities(): List<CommentIdEntity> =
-        kids.map { commentId ->
-            CommentIdEntity(
-                id = commentId,
-                storyId = this.id
-            )
-        }
+    kids.map { commentId ->
+        CommentIdEntity(
+            id = commentId,
+            storyId = this.id
+        )
+    }
 
 fun Item.toCommentEntity(
     storyId: Long
 ): CommentEntity =
-  CommentEntity(
-      id = id,
-      storyId = storyId,
-      author = author,
-      text = text ?: "",
-      time = Date(time * 1000)
-  )
+    CommentEntity(
+        id = id,
+        storyId = storyId,
+        author = author,
+        text = text ?: "",
+        time = Date(time * 1000)
+    )

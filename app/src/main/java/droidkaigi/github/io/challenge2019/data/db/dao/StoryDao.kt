@@ -7,7 +7,7 @@ import droidkaigi.github.io.challenge2019.data.db.entity.StoryEntity
 @Dao
 abstract class StoryDao {
 
-    @Query("SELECT * FROM story")
+    @Query("SELECT * FROM story ORDER BY story.`order`")
     abstract fun getAllStories(): LiveData<List<StoryEntity>>
 
     @Query("SELECT * FROM story WHERE already_read = 1")
@@ -23,7 +23,10 @@ abstract class StoryDao {
     abstract fun insert(story: StoryEntity)
 
     @Query("SELECT * FROM story WHERE id = :id")
-    abstract fun byId(id: Long): LiveData<StoryEntity?>
+    abstract fun byIdAsLive(id: Long): LiveData<StoryEntity?>
+
+    @Query("SELECT * FROM story WHERE id = :id")
+    abstract fun byId(id: Long): StoryEntity?
 
     @Transaction
     open fun clearAndInsert(newStories: List<StoryEntity>) {
