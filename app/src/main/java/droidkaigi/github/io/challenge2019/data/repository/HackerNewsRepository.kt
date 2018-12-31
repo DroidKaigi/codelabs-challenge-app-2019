@@ -54,7 +54,7 @@ object HackerNewsRepository {
             addSource(db.storyDao().getAllStories()) { storyEntities ->
                 storyEntities?.let {
                     val stories = it.map { storyEntity -> storyEntity.toStory() }
-                    value = Resource.Success(stories)
+                    value = Resource.Cache(stories)
                 }
             }
         }
@@ -78,6 +78,7 @@ object HackerNewsRepository {
                             db.storyDao().clearAndInsert(stories)
                             db.commentIdDao().insert(commentIds)
                         }
+                        liveData.postValue(Resource.Success())
                     }.execute(itemIds.take(20))
                 }
             }
@@ -94,7 +95,7 @@ object HackerNewsRepository {
         return MediatorLiveData<Resource<Story>>().apply {
             addSource(refreshStory(id)) { resource -> resource?.let { value = it } }
             addSource(db.storyDao().byId(id)) { storyEntity ->
-                storyEntity?.let { value = Resource.Success(it.toStory()) }
+                storyEntity?.let { value = Resource.Cache(it.toStory()) }
             }
         }
     }
@@ -116,6 +117,7 @@ object HackerNewsRepository {
                     .find { it.id == id }?.alreadyRead ?: false
                 db.storyDao().insert(item.toStoryEntity(alreadyRead))
             }
+            liveData.postValue(Resource.Success())
         }.execute(listOf(id))
 
         return liveData
@@ -125,7 +127,7 @@ object HackerNewsRepository {
         return MediatorLiveData<Resource<StoryWithComments>>().apply {
             addSource(refreshStoryWithComments(storyId)) { resource -> resource?.let { value = it } }
             addSource(db.storyCommentJoinDao().byStoryIdWithComments(storyId)) { storyWithCommentsEntity ->
-                storyWithCommentsEntity?.let { value = Resource.Success(it.toStoryWithComments()) }
+                storyWithCommentsEntity?.let { value = Resource.Cache(it.toStoryWithComments()) }
             }
         }
     }
@@ -138,7 +140,7 @@ object HackerNewsRepository {
         executor.execute {
             val commentIds = db.commentIdDao().byStoryId(storyId).map { it.id }
             refreshComments(storyId, commentIds,
-                onSuccess = {},
+                onSuccess = { liveData.postValue(Resource.Success()) },
                 onError = { error -> liveData.postValue(Resource.Error(error)) }
             )
         }

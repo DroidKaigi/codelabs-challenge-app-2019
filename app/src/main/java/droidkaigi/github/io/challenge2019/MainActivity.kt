@@ -52,12 +52,14 @@ class MainActivity : BaseActivity() {
                         progressView.visibility = Util.setVisibility(true)
                     }
                 }
-                is Resource.Success -> {
-                    progressView.visibility = Util.setVisibility(false)
-                    swipeRefreshLayout.isRefreshing = false
+                is Resource.Cache -> {
                     storyAdapter.stories = resource.data.toMutableList()
                     storyAdapter.alreadyReadStories = ArticlePreferences.getArticleIds(this@MainActivity)
                     storyAdapter.notifyDataSetChanged()
+                }
+                is Resource.Success -> {
+                    progressView.visibility = Util.setVisibility(false)
+                    swipeRefreshLayout.isRefreshing = false
                 }
                 is Resource.Error -> {
                     progressView.visibility = Util.setVisibility(false)
@@ -69,7 +71,7 @@ class MainActivity : BaseActivity() {
 
         viewModel.story.observe(this, Observer { resource ->
             when (resource) {
-                is Resource.Success -> {
+                is Resource.Cache -> {
                     val story = resource.data
                     val index = storyAdapter.stories.indexOf(story)
                     if (index == -1) return@Observer

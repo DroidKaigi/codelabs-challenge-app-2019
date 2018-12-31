@@ -55,7 +55,7 @@ class StoryActivity : BaseActivity() {
 
         viewModel.storyWithComments.observe(this, Observer { resource ->
             when(resource) {
-                is Resource.Success -> {
+                is Resource.Cache -> {
                     loadUrl(resource.data.story.url)
                     commentAdapter.comments = resource.data.comments
                     commentAdapter.notifyDataSetChanged()
