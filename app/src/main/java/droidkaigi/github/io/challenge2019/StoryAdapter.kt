@@ -15,6 +15,8 @@ class StoryAdapter(
     var alreadyReadStories: Set<String>
 ) : RecyclerView.Adapter<StoryAdapter.ViewHolder>() {
 
+    // TODO: 4.Use Story entity class instead of Item
+
     class ViewHolder(val binding: ItemStoryBinding) : RecyclerView.ViewHolder(binding.root)
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {

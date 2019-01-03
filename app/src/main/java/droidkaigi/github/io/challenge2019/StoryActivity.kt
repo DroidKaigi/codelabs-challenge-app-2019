@@ -25,6 +25,8 @@ import java.util.concurrent.CountDownLatch
 
 class StoryActivity : BaseActivity() {
 
+    // TODO: 6.Use HackerNewsRepository instead of HackerNewsApi
+
     companion object {
         const val EXTRA_ITEM_JSON = "droidkaigi.github.io.challenge2019.EXTRA_ITEM_JSON"
         const val READ_ARTICLE_ID = "read_article_id"

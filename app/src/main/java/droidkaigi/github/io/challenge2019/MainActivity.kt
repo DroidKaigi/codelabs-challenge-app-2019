@@ -11,7 +11,6 @@ import android.os.Bundle
 import android.support.v4.widget.SwipeRefreshLayout
 import android.support.v7.widget.DividerItemDecoration
 import android.support.v7.widget.RecyclerView
-import android.util.Log
 import android.view.MenuItem
 import android.view.View
 import android.widget.ProgressBar
@@ -27,6 +26,8 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CountDownLatch
 
 class MainActivity : BaseActivity() {
+
+    // TODO: 5.Use HackerNewsRepository instead of HackerNewsApi
 
     companion object {
         private const val STATE_STORIES = "stories"
