@@ -14,6 +14,7 @@ import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.ProgressBar
+import android.widget.TextView
 import com.squareup.moshi.Types
 import droidkaigi.github.io.challenge2019.data.api.HackerNewsApi
 import droidkaigi.github.io.challenge2019.data.api.response.Item
@@ -32,6 +33,7 @@ class StoryActivity : BaseActivity() {
     }
 
     private lateinit var webView: WebView
+    private lateinit var commentTitle: TextView
     private lateinit var recyclerView: RecyclerView
     private lateinit var progressView: ProgressBar
 
@@ -53,6 +55,7 @@ class StoryActivity : BaseActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         webView = findViewById(R.id.web_view)
+        commentTitle = findViewById(R.id.comment_title)
         recyclerView = findViewById(R.id.comment_recycler)
         progressView = findViewById(R.id.progress)
 
@@ -69,6 +72,8 @@ class StoryActivity : BaseActivity() {
         recyclerView.addItemDecoration(itemDecoration)
         commentAdapter = CommentAdapter(emptyList())
         recyclerView.adapter = commentAdapter
+        commentTitle.visibility = View.GONE
+        recyclerView.visibility = View.GONE
 
         if (item == null) return
 
@@ -117,10 +122,14 @@ class StoryActivity : BaseActivity() {
 
             override fun onPageFinished(view: WebView?, url: String?) {
                 progressLatch.countDown()
+                commentTitle.visibility = View.VISIBLE
+                recyclerView.visibility = View.VISIBLE
             }
 
             override fun onReceivedError(view: WebView?, request: WebResourceRequest?, error: WebResourceError?) {
                 progressLatch.countDown()
+                commentTitle.visibility = View.VISIBLE
+                recyclerView.visibility = View.VISIBLE
             }
         }
         webView.loadUrl(item!!.url)
