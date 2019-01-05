@@ -78,6 +78,8 @@ class StoryActivity : BaseActivity() {
             }
         }
 
+        title = item?.title
+
         if (savedComments != null) {
             commentAdapter.comments = savedComments
             commentAdapter.notifyDataSetChanged()
