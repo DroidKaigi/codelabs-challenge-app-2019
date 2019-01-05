@@ -1,5 +1,6 @@
 package droidkaigi.github.io.challenge2019.data.api.response
 
+import android.text.format.DateFormat
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
 
@@ -38,5 +39,9 @@ data class Item(
 ) {
     companion object {
         const val NO_ID = -1L
+    }
+
+    fun formatDatetime(): CharSequence {
+        return DateFormat.format("yyyy/M/d k:mm", time * 1000) ?: ""
     }
 }
