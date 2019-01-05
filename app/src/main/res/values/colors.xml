@@ -5,4 +5,5 @@
     <color name="colorAccent">#D81B60</color>
     <color name="helperText">#99000000</color>
     <color name="disabledText">#61000000</color>
+    <color name="pointText">#CC000000</color>
 </resources>
