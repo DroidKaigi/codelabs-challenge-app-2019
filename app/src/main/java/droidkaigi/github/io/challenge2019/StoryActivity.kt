@@ -46,6 +46,10 @@ class StoryActivity : BaseActivity() {
 
     private var story: Story? = null
 
+    // private val viewModel: StoryViewModel by lazy {
+    //     ViewModelProviders.of(this).get(StoryViewModel::class.java)
+    // }
+
     override fun getContentView(): Int {
         return R.layout.activity_story
     }
@@ -82,6 +86,22 @@ class StoryActivity : BaseActivity() {
         }
 
         progressView.visibility = View.VISIBLE
+        // viewModel.isLoading.observe(this, Observer { isLoading ->
+        //     progressView.visibility = Util.setVisibility(isLoading == true)
+        // })
+
+        // viewModel.comments.observe(this, Observer { resource ->
+        //     when (resource) {
+        //         is Resource.Success -> {
+        //             commentAdapter.comments = resource.data
+        //             commentAdapter.notifyDataSetChanged()
+        //         }
+        //         is Resource.Error -> {
+        //             showError(resource.t)
+        //         }
+        //     }
+        // })
+
         loadUrlAndComments()
     }
 
@@ -111,13 +131,18 @@ class StoryActivity : BaseActivity() {
 
             override fun onPageFinished(view: WebView?, url: String?) {
                 progressLatch.countDown()
+                // viewModel.onFinishWebPageLoading()
             }
 
             override fun onReceivedError(view: WebView?, request: WebResourceRequest?, error: WebResourceError?) {
                 progressLatch.countDown()
+                // viewModel.onErrorWebPageLoading()
             }
         }
+
+        // viewModel.onStartWebPageLoading()
         webView.loadUrl(story.url)
+        // viewModel.loadComments(story)
 
         val liveComments = HackerNewsRepository.getComments(story)
         liveComments.observe(this, Observer { resource ->
