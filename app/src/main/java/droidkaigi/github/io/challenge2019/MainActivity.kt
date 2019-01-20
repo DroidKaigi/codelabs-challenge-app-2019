@@ -39,6 +39,10 @@ class MainActivity : BaseActivity() {
     private val storiesJsonAdapter =
         moshi.adapter<List<Story?>>(Types.newParameterizedType(List::class.java, Story::class.java))
 
+    // private val viewModel: MainViewModel by lazy {
+    //     ViewModelProviders.of(this).get(MainViewModel::class.java)
+    // }
+
     override fun getContentView(): Int {
         return R.layout.activity_main
     }
@@ -68,6 +72,7 @@ class MainActivity : BaseActivity() {
                     }
                     R.id.refresh -> {
                         reloadStory(story.id)
+                        // viewModel.loadStory(story.id)
                     }
                 }
             },
@@ -89,6 +94,23 @@ class MainActivity : BaseActivity() {
             storyAdapter.notifyDataSetChanged()
             return
         }
+
+        // viewModel.topStories.observe(this, Observer { resource ->
+        //    when (resource) {
+        //        is Resource.Success -> {
+        //            progressView.visibility = Util.setVisibility(false)
+        //            swipeRefreshLayout.isRefreshing = false
+        //            storyAdapter.stories = resource.data.toMutableList()
+        //            storyAdapter.alreadyReadStories = ArticlePreferences.getArticleIds(this@MainActivity)
+        //            storyAdapter.notifyDataSetChanged()
+        //        }
+        //        is Resource.Error -> {
+        //            progressView.visibility = Util.setVisibility(false)
+        //            swipeRefreshLayout.isRefreshing = false
+        //            showError(resource.t)
+        //        }
+        //    }
+        // })
 
         loadTopStories(true)
     }
