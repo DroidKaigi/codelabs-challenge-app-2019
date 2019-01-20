@@ -10,14 +10,20 @@ class MainViewModel : ViewModel() {
     // TODO: 2. Implement MainViewModel
     // refer: https://developer.android.com/topic/libraries/architecture/livedata#transform_livedata
 
+    // private val topStoriesRequest = MutableLiveData<Unit>()
     val topStories: LiveData<Resource<List<Story?>>> =
         TODO("Implement this property")
+        // Transformations.switchMap(topStoriesRequest) {
+        //     HackerNewsRepository.getTopStories()
+        // }
 
+    // private val storyIdInput = MutableLiveData<Long>()
     val story: LiveData<Resource<Story>> =
         TODO("Implement this property")
 
     fun loadTopStories() {
         TODO("Implement this method")
+        // topStoriesRequest.postValue(Unit)
     }
 
     fun loadStory(id: Long) {
