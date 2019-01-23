@@ -34,8 +34,8 @@ dependencies {
     def lifecycle_version = "1.1.1"
     // TODO: 1.Change livedata to extensions
     // refer: https://developer.android.com/topic/libraries/architecture/adding-components
-    implementation "android.arch.lifecycle:extensions:$lifecycle_version"
-//    implementation "android.arch.lifecycle:livedata:$lifecycle_version"
+    // implementation "android.arch.lifecycle:extensions:$lifecycle_version"
+    implementation "android.arch.lifecycle:livedata:$lifecycle_version"
     kapt "android.arch.lifecycle:compiler:$lifecycle_version"
 
     implementation 'com.squareup.retrofit2:retrofit:2.5.0'
