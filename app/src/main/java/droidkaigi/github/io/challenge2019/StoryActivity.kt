@@ -46,6 +46,10 @@ class StoryActivity : BaseActivity() {
 
     private var story: Story? = null
 
+    private val viewModel: StoryViewModel by lazy {
+        TODO("Implement this property")
+    }
+
     override fun getContentView(): Int {
         return R.layout.activity_story
     }
@@ -60,11 +64,8 @@ class StoryActivity : BaseActivity() {
             storyJsonAdapter.fromJson(it)
         }
 
-        recyclerView.isNestedScrollingEnabled = false
-        val itemDecoration = DividerItemDecoration(recyclerView.context, DividerItemDecoration.VERTICAL)
-        recyclerView.addItemDecoration(itemDecoration)
-        commentAdapter = CommentAdapter(emptyList())
-        recyclerView.adapter = commentAdapter
+        setupRecyclerView()
+        setupWebView()
 
         if (story == null) return
 
@@ -81,7 +82,10 @@ class StoryActivity : BaseActivity() {
             return
         }
 
-        progressView.visibility = View.VISIBLE
+        viewModel.isLoading.observe(this, Observer { isLoading ->
+            progressView.visibility = Util.setVisibility(isLoading == true)
+        })
+
         loadUrlAndComments()
     }
 
@@ -137,8 +141,30 @@ class StoryActivity : BaseActivity() {
         })
     }
 
+    private fun setupRecyclerView() {
+        recyclerView.isNestedScrollingEnabled = false
+        val itemDecoration = DividerItemDecoration(recyclerView.context, DividerItemDecoration.VERTICAL)
+        recyclerView.addItemDecoration(itemDecoration)
+        commentAdapter = CommentAdapter(emptyList())
+        recyclerView.adapter = commentAdapter
+    }
+
+
+    private fun setupWebView() {
+        webView.webViewClient = object : WebViewClient() {
+
+            override fun onPageFinished(view: WebView?, url: String?) {
+                viewModel.onFinishWebPageLoading()
+            }
+
+            override fun onReceivedError(view: WebView?, request: WebResourceRequest?, error: WebResourceError?) {
+                viewModel.onErrorWebPageLoading()
+            }
+        }
+    }
+
     override fun onOptionsItemSelected(item: MenuItem?): Boolean {
-        return when(item?.itemId) {
+        return when (item?.itemId) {
             R.id.refresh -> {
                 progressView.visibility = Util.setVisibility(true)
                 loadUrlAndComments()

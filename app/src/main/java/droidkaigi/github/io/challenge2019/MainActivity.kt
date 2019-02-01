@@ -39,6 +39,10 @@ class MainActivity : BaseActivity() {
     private val storiesJsonAdapter =
         moshi.adapter<List<Story?>>(Types.newParameterizedType(List::class.java, Story::class.java))
 
+    private val viewModel: MainViewModel by lazy {
+        TODO("Implement this property")
+    }
+
     override fun getContentView(): Int {
         return R.layout.activity_main
     }
@@ -49,31 +53,7 @@ class MainActivity : BaseActivity() {
         progressView = findViewById(R.id.progress)
         swipeRefreshLayout = findViewById(R.id.swipe_refresh)
 
-        val itemDecoration = DividerItemDecoration(recyclerView.context, DividerItemDecoration.VERTICAL)
-        recyclerView.addItemDecoration(itemDecoration)
-        storyAdapter = StoryAdapter(
-            stories = mutableListOf(),
-            onClickStory = { story ->
-                val storyJson = storyJsonAdapter.toJson(story)
-                val intent = Intent(this@MainActivity, StoryActivity::class.java).apply {
-                    putExtra(StoryActivity.EXTRA_ITEM_JSON, storyJson)
-                }
-                startActivityForResult(intent)
-            },
-            onClickMenuItem = { story, menuItemId ->
-                when (menuItemId) {
-                    R.id.copy_url -> {
-                        val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                        clipboard.primaryClip = ClipData.newPlainText("url", story.url)
-                    }
-                    R.id.refresh -> {
-                        reloadStory(story.id)
-                    }
-                }
-            },
-            alreadyReadStories = ArticlePreferences.getArticleIds(this)
-        )
-        recyclerView.adapter = storyAdapter
+        setupRecyclerView()
 
         swipeRefreshLayout.setOnRefreshListener { loadTopStories() }
 
@@ -140,6 +120,34 @@ class MainActivity : BaseActivity() {
                 }
             }
         })
+    }
+
+    private fun setupRecyclerView() {
+        val itemDecoration = DividerItemDecoration(recyclerView.context, DividerItemDecoration.VERTICAL)
+        recyclerView.addItemDecoration(itemDecoration)
+        storyAdapter = StoryAdapter(
+            stories = mutableListOf(),
+            onClickStory = { story ->
+                val storyJson = storyJsonAdapter.toJson(story)
+                val intent = Intent(this@MainActivity, StoryActivity::class.java).apply {
+                    putExtra(StoryActivity.EXTRA_ITEM_JSON, storyJson)
+                }
+                startActivityForResult(intent)
+            },
+            onClickMenuItem = { story, menuItemId ->
+                when (menuItemId) {
+                    R.id.copy_url -> {
+                        val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                        clipboard.primaryClip = ClipData.newPlainText("url", story.url)
+                    }
+                    R.id.refresh -> {
+                        viewModel.loadStory(story.id)
+                    }
+                }
+            },
+            alreadyReadStories = ArticlePreferences.getArticleIds(this)
+        )
+        recyclerView.adapter = storyAdapter
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
