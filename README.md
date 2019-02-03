@@ -13,12 +13,6 @@
 
 ## 資料へのリンク / Document links
 
-### Part1: 機能実装編 / Part1: Adding Features
-
-* [Japanese version]()
-* [English version]()
-
-### Part2: リファクタ編 / Part2: Refactoring
-
-* [Japanese version]()
-* [English version]()
+* [Part1&2: 共通資料 / Part1&2: Common document](https://drive.google.com/drive/folders/1g_37AsPE7Fr7TKJvpiBo5wIgKA-eKRAG?usp=sharing)
+* [Part1: 機能実装編 / Part1: Adding Features](https://drive.google.com/drive/folders/1_fNncdwMaQsEF2X4wKQLVxkQYdUttJ26?usp=sharing)
+* [Part2: リファクタ編 / Part2: Refactoring](https://drive.google.com/drive/folders/1o5Tvw2Rgu8z93nERMfva2L-7ScSb_HJ-?usp=sharing)
