@@ -20,6 +20,7 @@ import droidkaigi.github.io.challenge2019.data.api.HackerNewsApi
 import droidkaigi.github.io.challenge2019.data.api.response.Item
 import droidkaigi.github.io.challenge2019.data.db.ArticlePreferences
 import droidkaigi.github.io.challenge2019.data.db.ArticlePreferences.Companion.saveArticleIds
+import droidkaigi.github.io.challenge2019.ingest.IngestManager
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -43,6 +44,8 @@ class MainActivity : BaseActivity() {
     private val itemJsonAdapter = moshi.adapter(Item::class.java)
     private val itemsJsonAdapter =
         moshi.adapter<List<Item?>>(Types.newParameterizedType(List::class.java, Item::class.java))
+
+    private val ingestManager = IngestManager()
 
 
     override fun getContentView(): Int {
@@ -75,6 +78,7 @@ class MainActivity : BaseActivity() {
                     R.id.copy_url -> {
                         val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                         clipboard.primaryClip = ClipData.newPlainText("url", item.url)
+                        trackAction()
                     }
                     R.id.refresh -> {
                         hackerNewsApi.getItem(item.id).enqueue(object : Callback<Item> {
@@ -165,6 +169,7 @@ class MainActivity : BaseActivity() {
                             storyAdapter.stories = items.toMutableList()
                             storyAdapter.alreadyReadStories = ArticlePreferences.getArticleIds(this@MainActivity)
                             storyAdapter.notifyDataSetChanged()
+                            trackPageView()
                         }
                     }
 
@@ -217,5 +222,17 @@ class MainActivity : BaseActivity() {
         getStoriesTask?.run {
             if (!isCancelled) cancel(true)
         }
+    }
+
+    fun trackPageView() {
+        Thread {
+            ingestManager.track()
+        }.start()
+    }
+
+    fun trackAction() {
+        Thread {
+            ingestManager.track()
+        }.start()
     }
 }
