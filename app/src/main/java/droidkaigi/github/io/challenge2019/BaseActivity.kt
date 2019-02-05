@@ -8,8 +8,8 @@ import android.view.Menu
 import android.view.MenuItem
 import android.widget.Toast
 import com.squareup.moshi.Moshi
-import retrofit2.Retrofit
-import retrofit2.converter.moshi.MoshiConverterFactory
+import com.squareup.moshi.adapters.Rfc3339DateJsonAdapter
+import java.util.*
 
 abstract class BaseActivity : AppCompatActivity() {
 
@@ -17,20 +17,15 @@ abstract class BaseActivity : AppCompatActivity() {
         const val ACTIVITY_REQUEST = 1
     }
 
-    internal val moshi = Moshi.Builder().build()
+    internal val moshi = Moshi.Builder()
+        .add(Date::class.java, Rfc3339DateJsonAdapter())
+        .build()
 
     abstract fun getContentView(): Int
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(getContentView())
-    }
-
-    fun createRetrofit(url: String): Retrofit {
-        return Retrofit.Builder()
-            .baseUrl(url)
-            .addConverterFactory(MoshiConverterFactory.create())
-            .build()
     }
 
     fun showError(throwable: Throwable) {
