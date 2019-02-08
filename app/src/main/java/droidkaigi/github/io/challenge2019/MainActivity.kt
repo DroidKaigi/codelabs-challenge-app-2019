@@ -8,10 +8,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.AsyncTask
 import android.os.Bundle
-import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-import androidx.recyclerview.widget.DividerItemDecoration
-import androidx.recyclerview.widget.RecyclerView
-import android.util.Log
+import android.os.PersistableBundle
 import android.view.MenuItem
 import android.view.View
 import android.widget.ProgressBar
@@ -207,12 +204,12 @@ class MainActivity : BaseActivity() {
         }
     }
 
-    override fun onSaveInstanceState(outState: Bundle?) {
+    override fun onSaveInstanceState(outState: Bundle?, outPersistentState: PersistableBundle?) {
         outState?.apply {
             putString(STATE_STORIES, itemsJsonAdapter.toJson(storyAdapter.stories))
         }
 
-        super.onSaveInstanceState(outState)
+        super.onSaveInstanceState(outState, outPersistentState)
     }
 
     override fun onDestroy() {

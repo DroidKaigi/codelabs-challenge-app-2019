@@ -5,8 +5,7 @@ import android.app.Activity
 import android.content.Intent
 import android.os.AsyncTask
 import android.os.Bundle
-import androidx.recyclerview.widget.DividerItemDecoration
-import androidx.recyclerview.widget.RecyclerView
+import android.os.PersistableBundle
 import android.view.MenuItem
 import android.view.View
 import android.webkit.WebResourceError
@@ -184,12 +183,11 @@ class StoryActivity : BaseActivity() {
         }
     }
 
-    override fun onSaveInstanceState(outState: Bundle?) {
+    override fun onSaveInstanceState(outState: Bundle?, outPersistentState: PersistableBundle?) {
         outState?.apply {
             putString(STATE_COMMENTS, itemsJsonAdapter.toJson(commentAdapter.comments))
         }
-
-        super.onSaveInstanceState(outState)
+        super.onSaveInstanceState(outState, outPersistentState)
     }
 
     override fun onDestroy() {
