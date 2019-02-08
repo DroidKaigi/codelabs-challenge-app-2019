@@ -4,7 +4,7 @@ import android.content.Context
 import android.preference.PreferenceManager
 import javax.inject.Inject
 
-// TODO: あとでRoomに変える。IFもちゃんと作る
+// TODO: あとでRoomに移行
 class PreferencesProvider @Inject constructor(private val context: Context) {
 
     fun saveArticleIds(articleId: String) {

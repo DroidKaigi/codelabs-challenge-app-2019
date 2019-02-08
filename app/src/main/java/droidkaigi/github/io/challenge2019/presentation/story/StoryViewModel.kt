@@ -7,10 +7,7 @@ import androidx.lifecycle.ViewModelProvider
 import droidkaigi.github.io.challenge2019.data.model.Comment
 import droidkaigi.github.io.challenge2019.data.model.Story
 import droidkaigi.github.io.challenge2019.data.repository.HackerNewsRepository
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import kotlin.coroutines.CoroutineContext
 
 class StoryViewModel(
@@ -18,7 +15,6 @@ class StoryViewModel(
     private val story: Story
 ) : ViewModel(), CoroutineScope {
 
-    // TODO: Errorハンドリング手抜き
     private val _comments: MutableLiveData<List<Comment>> = MutableLiveData()
     val comments: LiveData<List<Comment>> = _comments
 
@@ -27,13 +23,25 @@ class StoryViewModel(
 
     val webViewLoading: MutableLiveData<Boolean> = MutableLiveData()
 
+    // TODO: Errorハンドリング手抜き
+    private val _errorEvent: MutableLiveData<Throwable> = MutableLiveData()
+    val errorEvent: LiveData<Throwable> = _errorEvent
+
     private val job = Job()
+
+    private val exceptionHandler = CoroutineExceptionHandler { _, exception ->
+        _errorEvent.value = exception
+    }
 
     override val coroutineContext: CoroutineContext
         get() = job + Dispatchers.Main
 
     init {
-        launch {
+        onInit()
+    }
+
+    fun onInit() {
+        launch(exceptionHandler) {
             _commentLoading.postValue(true)
             _comments.postValue(repository.fetchCommentsByIds(story.commentIds))
         }.invokeOnCompletion {

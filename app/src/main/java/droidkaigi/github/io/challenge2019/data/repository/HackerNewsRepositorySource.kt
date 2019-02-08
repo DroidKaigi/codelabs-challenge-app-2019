@@ -3,46 +3,27 @@ package droidkaigi.github.io.challenge2019.data.repository
 import droidkaigi.github.io.challenge2019.data.model.*
 import droidkaigi.github.io.challenge2019.infrastructure.database.PreferencesProvider
 import droidkaigi.github.io.challenge2019.infrastructure.network.HackerNewsApi
+import droidkaigi.github.io.challenge2019.infrastructure.network.ItemResponse
 import javax.inject.Inject
 
 class HackerNewsRepositorySource @Inject constructor(
     private val hackerNewsApi: HackerNewsApi,
-    private val preferencesProvider: PreferencesProvider
+    private val preferencesProvider: PreferencesProvider // TODO: Roomに移行したらDaoをDIしてDBにキャッシュ
 ) : HackerNewsRepository {
     override suspend fun fetchTopStories(): List<Story> {
+        // TODO: 20はどこに持つかな。。。
         val response = hackerNewsApi.getTopStories().await().take(20)
         val deferredItems = response.map {
             hackerNewsApi.getItem(it)
         }
         val articleIds = preferencesProvider.getArticleIds()
-        return deferredItems.map {
-            val itemResponse = it.await()
-            Story(
-                id = StoryId(itemResponse.id),
-                author = itemResponse.author?.let { author -> Author(author) },
-                title = itemResponse.title,
-                url = itemResponse.url,
-                score = itemResponse.score,
-                time = itemResponse.time,
-                commentIds = itemResponse.kids.map(::CommentId),
-                alreadyRead = articleIds.contains(itemResponse.id.toString())
-            )
-        }
+        return deferredItems.map { it.await().toStory(articleIds) }
     }
 
     override suspend fun fetchStoryById(storyId: StoryId): Story {
         val articleIds = preferencesProvider.getArticleIds()
         val itemResponse = hackerNewsApi.getItem(storyId.v).await()
-        return Story(
-            id = StoryId(itemResponse.id),
-            author = itemResponse.author?.let { author -> Author(author) },
-            title = itemResponse.title,
-            url = itemResponse.url,
-            score = itemResponse.score,
-            time = itemResponse.time,
-            commentIds = itemResponse.kids.map(::CommentId),
-            alreadyRead = articleIds.contains(itemResponse.id.toString())
-        )
+        return itemResponse.toStory(articleIds)
     }
 
     override suspend fun fetchCommentsByIds(commentIds: List<CommentId>): List<Comment> {
@@ -51,18 +32,31 @@ class HackerNewsRepositorySource @Inject constructor(
         }
         return deferredItems.map {
             val itemResponse = it.await()
-            Comment(
-                id = CommentId(itemResponse.id),
-                author = itemResponse.author?.let { author -> Author(author) },
-                storyId = StoryId(itemResponse.parent),
-                text = itemResponse.text,
-                time = itemResponse.time
-            )
+            itemResponse.toComment()
         }
     }
 
     override suspend fun updateReadStatus(storyId: StoryId, alreadyRead: Boolean) {
-        // TODO: 未読に戻せるようにするとか
+        // TODO: 未読に戻せるようにする？
         preferencesProvider.saveArticleIds(storyId.v.toString())
     }
 }
+
+private fun ItemResponse.toStory(articleIds: Set<String>) = Story(
+    id = StoryId(id),
+    author = author?.let { author -> Author(author) },
+    title = title,
+    url = url,
+    score = score,
+    time = time,
+    commentIds = kids.map(::CommentId),
+    alreadyRead = articleIds.contains(id.toString())
+)
+
+private fun ItemResponse.toComment() = Comment(
+    id = CommentId(id),
+    author = author?.let { author -> Author(author) },
+    storyId = StoryId(parent),
+    text = text,
+    time = time
+)
