@@ -26,8 +26,6 @@ class MyApplication : DaggerApplication() {
     override fun applicationInjector(): AndroidInjector<out DaggerApplication> {
         return DaggerMyApplication_Component.builder()
             .applicationModule(ApplicationModule(this))
-//            .networkModule(NetworkModule.instance)
-//            .databaseModule(DatabaseModule.instance)
             .build()
     }
 
