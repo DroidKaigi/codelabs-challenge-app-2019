@@ -4,7 +4,8 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import droidkaigi.github.io.challenge2019.data.api.response.Item
+import droidkaigi.github.io.challenge2019.data.model.Article
+import droidkaigi.github.io.challenge2019.data.model.Item
 import droidkaigi.github.io.challenge2019.data.repository.HackerNewsRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -18,8 +19,8 @@ class StoryViewModel(
 ) : ViewModel(), CoroutineScope {
 
     // TODO: Errorハンドリング手抜き
-    private val _comments: MutableLiveData<List<Item>> = MutableLiveData()
-    val comments: LiveData<List<Item>> = _comments
+    private val _comments: MutableLiveData<List<Article>> = MutableLiveData()
+    val comments: LiveData<List<Article>> = _comments
 
     private val _commentLoading: MutableLiveData<Boolean> = MutableLiveData()
     val commentLoading: LiveData<Boolean> = _commentLoading

@@ -1,28 +1,23 @@
 package droidkaigi.github.io.challenge2019.presentation.main
 
 import android.app.Activity
-import android.content.ClipData
-import android.content.ClipboardManager
-import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.view.Menu
 import android.view.MenuItem
-import android.view.View
-import android.widget.ProgressBar
+import androidx.databinding.DataBindingUtil
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
-import androidx.recyclerview.widget.RecyclerView
-import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-import com.squareup.moshi.Types
+import androidx.recyclerview.widget.DividerItemDecoration
 import dagger.Binds
 import dagger.android.ActivityKey
-import dagger.android.AndroidInjection
 import dagger.android.AndroidInjector
+import dagger.android.support.DaggerAppCompatActivity
 import dagger.multibindings.IntoMap
-import droidkaigi.github.io.challenge2019.*
-import droidkaigi.github.io.challenge2019.data.api.response.Item
-import droidkaigi.github.io.challenge2019.data.db.ArticlePreferences
-import droidkaigi.github.io.challenge2019.data.db.ArticlePreferences.Companion.saveArticleIds
+import droidkaigi.github.io.challenge2019.R
+import droidkaigi.github.io.challenge2019.databinding.ActivityMainBinding
+import droidkaigi.github.io.challenge2019.ext.copyToClipboard
+import droidkaigi.github.io.challenge2019.ext.showError
 import droidkaigi.github.io.challenge2019.ingest.IngestManager
 import droidkaigi.github.io.challenge2019.presentation.di.ActivityModule
 import droidkaigi.github.io.challenge2019.presentation.di.ActivityScope
@@ -31,121 +26,68 @@ import kotlinx.coroutines.Runnable
 import timber.log.Timber
 import javax.inject.Inject
 
-class MainActivity : BaseActivity() {
+class MainActivity : DaggerAppCompatActivity() {
 
     companion object {
-        private const val STATE_STORIES = "stories"
+        const val ACTIVITY_REQUEST = 1
     }
 
     @Inject
     lateinit var viewModelFactory: MainViewModel.Factory
 
+    @Inject
+    lateinit var ingestManager: IngestManager
+
     private lateinit var viewModel: MainViewModel
 
-    private lateinit var recyclerView: RecyclerView
-    private lateinit var progressView: ProgressBar
-    private lateinit var swipeRefreshLayout: SwipeRefreshLayout
+    private lateinit var binding: ActivityMainBinding
 
     private lateinit var storyAdapter: StoryAdapter
 
-    private val itemJsonAdapter = moshi.adapter(Item::class.java)
-    private val itemsJsonAdapter =
-        moshi.adapter<List<Item?>>(Types.newParameterizedType(List::class.java, Item::class.java))
-
-    private val ingestManager = IngestManager()
-
-    override fun getContentView(): Int {
-        return R.layout.activity_main
-    }
-
     override fun onCreate(savedInstanceState: Bundle?) {
-        AndroidInjection.inject(this)
         super.onCreate(savedInstanceState)
         viewModel = ViewModelProviders.of(this, viewModelFactory).get(MainViewModel::class.java)
 
-        recyclerView = findViewById(R.id.item_recycler)
-        progressView = findViewById(R.id.progress)
-        swipeRefreshLayout = findViewById(R.id.swipe_refresh)
-
-        val itemDecoration = androidx.recyclerview.widget.DividerItemDecoration(
-            recyclerView.context,
-            androidx.recyclerview.widget.DividerItemDecoration.VERTICAL
-        )
-        recyclerView.addItemDecoration(itemDecoration)
-        storyAdapter = StoryAdapter(
-            stories = mutableListOf(),
-            onClickItem = { item ->
-                val itemJson = itemJsonAdapter.toJson(item)
-                val intent =
-                    Intent(this@MainActivity, StoryActivity::class.java).apply {
-                        putExtra(StoryActivity.EXTRA_ITEM_JSON, itemJson)
-                    }
-                startActivityForResult(intent)
-            },
-            onClickMenuItem = { item, menuItemId ->
-                when (menuItemId) {
-                    R.id.copy_url -> {
-                        track()
-                        val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                        clipboard.primaryClip = ClipData.newPlainText("url", item.url)
-                    }
-                    R.id.refresh -> {
-                        viewModel.onClickItem(item.id)
-                    }
-                }
-            },
-            alreadyReadStories = ArticlePreferences.getArticleIds(this)
-        )
-
-        recyclerView.adapter = storyAdapter
-
-        swipeRefreshLayout.setOnRefreshListener {
-            viewModel.onRefresh()
-        }
-
-        val savedStories = savedInstanceState?.let { bundle ->
-            bundle.getString(STATE_STORIES)?.let { itemsJson ->
-                itemsJsonAdapter.fromJson(itemsJson)
-            }
-        }
-
-        if (savedStories != null) {
-            storyAdapter.stories = savedStories.toMutableList()
-            storyAdapter.alreadyReadStories = ArticlePreferences.getArticleIds(this@MainActivity)
-            storyAdapter.notifyDataSetChanged()
-            return
-        }
-
-        progressView.visibility = Util.setVisibility(true)
-
-        viewModel.items.observe(this, Observer {
-            progressView.visibility = View.GONE
-            swipeRefreshLayout.isRefreshing = false
+        viewModel.articles.observe(this, Observer {
             storyAdapter.stories = it.toMutableList()
-            storyAdapter.alreadyReadStories = ArticlePreferences.getArticleIds(this@MainActivity)
             storyAdapter.notifyDataSetChanged()
         })
-        viewModel.item.observe(this, Observer {
-            val index = storyAdapter.stories.indexOf(it)
+        viewModel.article.observe(this, Observer {
+            val index = storyAdapter.stories.indexOfFirst { item -> item?.id == it.id }
             if (index == -1) {
                 return@Observer
             }
             storyAdapter.stories[index] = it
-            storyAdapter.alreadyReadStories =
-                ArticlePreferences.getArticleIds(this@MainActivity)
             storyAdapter.notifyItemChanged(index)
         })
-//            override fun onFailure(call: Call<List<Long>>, t: Throwable) {
-//                showError(t)
-//            }
+        viewModel.errorEvent.observe(this, Observer {
+            showError(it)
+        })
 
+        binding = DataBindingUtil.setContentView<ActivityMainBinding>(this, R.layout.activity_main).apply {
+            viewModel = this@MainActivity.viewModel
+            lifecycleOwner = this@MainActivity
+        }
+        setUpRecyclerView()
     }
 
-    private fun track() {
-        Thread(Runnable {
-            val responseCode = ingestManager.track()
-            Timber.d("IngestManager#track code:$responseCode")
-        }).start()
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.activity_menu, menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem?): Boolean {
+        return when (item?.itemId) {
+            R.id.exit -> {
+                this.finish()
+                return true
+            }
+            R.id.refresh -> {
+                viewModel.onInit()
+                return true
+            }
+            else -> super.onOptionsItemSelected(item)
+        }
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -153,9 +95,7 @@ class MainActivity : BaseActivity() {
             Activity.RESULT_OK -> {
                 data?.getLongExtra(StoryActivity.READ_ARTICLE_ID, 0L)?.let { id ->
                     if (id != 0L) {
-                        saveArticleIds(this, id.toString())
-                        storyAdapter.alreadyReadStories = ArticlePreferences.getArticleIds(this)
-                        storyAdapter.notifyDataSetChanged()
+                        viewModel.onReadArticle(id)
                     }
                 }
             }
@@ -163,22 +103,42 @@ class MainActivity : BaseActivity() {
         super.onActivityResult(requestCode, resultCode, data)
     }
 
-    override fun onOptionsItemSelected(item: MenuItem?): Boolean {
-        return when (item?.itemId) {
-            R.id.refresh -> {
-                progressView.visibility = Util.setVisibility(true)
-                viewModel.onRefresh()
-                return true
+    private fun setUpRecyclerView() {
+        val itemDecoration = DividerItemDecoration(
+            binding.itemRecycler.context,
+            DividerItemDecoration.VERTICAL
+        )
+        binding.itemRecycler.addItemDecoration(itemDecoration)
+        storyAdapter = StoryAdapter(
+            stories = mutableListOf(),
+            onClickItem = { item ->
+                startActivityForResult(
+                    StoryActivity.createIntent(this@MainActivity, item.content),
+                    ACTIVITY_REQUEST
+                )
+
+            },
+            onClickMenuItem = { item, menuItemId ->
+                when (menuItemId) {
+                    R.id.copy_url -> {
+                        track()
+                        copyToClipboard("url", item.content.url)
+                    }
+                    R.id.refresh -> {
+                        viewModel.onClickItem(item.id)
+                    }
+                }
             }
-            else -> super.onOptionsItemSelected(item)
-        }
+        )
+
+        binding.itemRecycler.adapter = storyAdapter
     }
 
-    override fun onSaveInstanceState(outState: Bundle) {
-        outState.apply {
-            putString(STATE_STORIES, itemsJsonAdapter.toJson(storyAdapter.stories))
-        }
-        super.onSaveInstanceState(outState)
+    private fun track() {
+        Thread(Runnable {
+            val responseCode = ingestManager.track()
+            Timber.d("IngestManager#track code:$responseCode")
+        }).start()
     }
 
     @ActivityScope

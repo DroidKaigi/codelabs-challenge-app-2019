@@ -1,6 +1,6 @@
 package droidkaigi.github.io.challenge2019.infrastructure.network
 
-import droidkaigi.github.io.challenge2019.data.api.response.Item
+import droidkaigi.github.io.challenge2019.data.model.Item
 import droidkaigi.github.io.challenge2019.data.api.response.User
 import kotlinx.coroutines.Deferred
 import retrofit2.Call
