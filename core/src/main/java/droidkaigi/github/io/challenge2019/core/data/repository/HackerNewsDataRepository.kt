@@ -26,6 +26,16 @@ class HackerNewsDataRepository(
         }
     }
 
+    override suspend fun getComments(item: Item): List<Item> = withContext(Dispatchers.IO) {
+        val kids = item.kids
+
+        kids.map { id ->
+            async { getItem(id) }
+        }.map {
+            it.await()
+        }
+    }
+
     private fun getItem(id: Long): Item {
         val call = hackerNewsApi.getItem(id)
         return call.execute().body()!! // TODO: エラー対応
