@@ -45,12 +45,9 @@ class StoryActivity : BaseActivity() {
 
     private var item: Item? = null
 
-    override fun getContentView(): Int {
-        return R.layout.activity_story
-    }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_story)
         webView = findViewById(R.id.web_view)
         recyclerView = findViewById(R.id.comment_recycler)
         progressView = findViewById(R.id.progress)

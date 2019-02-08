@@ -12,11 +12,19 @@ class MainViewModel @Inject constructor(
     private val hackerNewsRepository: HackerNewsRepository
 ) : ViewModel() {
 
+    val isLoading = MutableLiveData<Boolean>()
+    val isRefreshing = MutableLiveData<Boolean>()
+
     val items = MutableLiveData<List<Item>>()
 
-    fun loadTopStories() {
+    fun loadTopStories(refresh: Boolean = false) {
+        isLoading.value = !refresh
+        isRefreshing.value = refresh
+
         viewModelScope.launch {
             items.value = hackerNewsRepository.getTopStories()
+            isLoading.value = false
+            isRefreshing.value = false
 
             // TODO: エラー対応
         }

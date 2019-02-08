@@ -9,21 +9,20 @@ import android.os.AsyncTask
 import android.os.Bundle
 import android.os.PersistableBundle
 import android.view.MenuItem
-import android.view.View
-import android.widget.ProgressBar
+import androidx.databinding.DataBindingUtil
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelProviders
 import androidx.lifecycle.observe
 import com.squareup.moshi.Types
-import droidkaigi.github.io.challenge2019.*
-import droidkaigi.github.io.challenge2019.core.data.api.HackerNewsApi
+import droidkaigi.github.io.challenge2019.BaseActivity
+import droidkaigi.github.io.challenge2019.R
+import droidkaigi.github.io.challenge2019.StoryActivity
+import droidkaigi.github.io.challenge2019.StoryAdapter
 import droidkaigi.github.io.challenge2019.core.data.api.response.Item
 import droidkaigi.github.io.challenge2019.data.db.ArticlePreferences
 import droidkaigi.github.io.challenge2019.data.db.ArticlePreferences.Companion.saveArticleIds
+import droidkaigi.github.io.challenge2019.databinding.ActivityMainBinding
 import droidkaigi.github.io.challenge2019.di.component
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
 import javax.inject.Inject
 
 class MainActivity : BaseActivity() {
@@ -32,12 +31,7 @@ class MainActivity : BaseActivity() {
         private const val STATE_STORIES = "stories"
     }
 
-    private lateinit var recyclerView: androidx.recyclerview.widget.RecyclerView
-    private lateinit var progressView: ProgressBar
-    private lateinit var swipeRefreshLayout: androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-
     private lateinit var storyAdapter: StoryAdapter
-    private lateinit var hackerNewsApi: HackerNewsApi
 
     private var getStoriesTask: AsyncTask<Long, Unit, List<Item?>>? = null
     private val itemJsonAdapter = moshi.adapter(Item::class.java)
@@ -51,22 +45,22 @@ class MainActivity : BaseActivity() {
         ViewModelProviders.of(this, viewModelFactory).get(MainViewModel::class.java)
     }
 
-    override fun getContentView(): Int {
-        return R.layout.activity_main
-    }
+    private lateinit var binding: ActivityMainBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         component().inject(this)
-        recyclerView = findViewById(R.id.item_recycler)
-        progressView = findViewById(R.id.progress)
-        swipeRefreshLayout = findViewById(R.id.swipe_refresh)
+
+        binding = DataBindingUtil.setContentView(this, R.layout.activity_main)
+        binding.lifecycleOwner = this
+        binding.handler = this
+        binding.viewModel = viewModel
 
         val itemDecoration = androidx.recyclerview.widget.DividerItemDecoration(
-            recyclerView.context,
+            this,
             androidx.recyclerview.widget.DividerItemDecoration.VERTICAL
         )
-        recyclerView.addItemDecoration(itemDecoration)
+        binding.itemRecycler.addItemDecoration(itemDecoration)
         storyAdapter = StoryAdapter(
             stories = mutableListOf(),
             onClickItem = { item ->
@@ -84,33 +78,32 @@ class MainActivity : BaseActivity() {
                         clipboard.primaryClip = ClipData.newPlainText("url", item.url)
                     }
                     R.id.refresh -> {
-                        hackerNewsApi.getItem(item.id).enqueue(object : Callback<Item> {
-                            override fun onResponse(call: Call<Item>, response: Response<Item>) {
-                                response.body()?.let { newItem ->
-                                    val index = storyAdapter.stories.indexOf(item)
-                                    if (index == -1) return
-
-                                    storyAdapter.stories[index] = newItem
-                                    runOnUiThread {
-                                        storyAdapter.alreadyReadStories =
-                                            ArticlePreferences.getArticleIds(this@MainActivity)
-                                        storyAdapter.notifyItemChanged(index)
-                                    }
-                                }
-                            }
-
-                            override fun onFailure(call: Call<Item>, t: Throwable) {
-                                showError(t)
-                            }
-                        })
+                        // TODO: これ邪魔なので、とりあえずコメント
+//                        hackerNewsApi.getItem(item.id).enqueue(object Callback<Item> {
+//                            override fun onResponse(call: Call<Item>, response: Response<Item>) {
+//                                response.body()?.let { newItem ->
+//                                    val index = storyAdapter.stories.indexOf(item)
+//                                    if (index == -1) return
+//
+//                                    storyAdapter.stories[index] = newItem
+//                                    runOnUiThread {
+//                                        storyAdapter.alreadyReadStories =
+//                                            ArticlePreferences.getArticleIds(this@MainActivity)
+//                                        storyAdapter.notifyItemChanged(index)
+//                                    }
+//                                }
+//                            }
+//
+//                            override fun onFailure(call: Call<Item>, t: Throwable) {
+//                                showError(t)
+//                            }
+//                        })
                     }
                 }
             },
             alreadyReadStories = ArticlePreferences.getArticleIds(this)
         )
-        recyclerView.adapter = storyAdapter
-
-        swipeRefreshLayout.setOnRefreshListener { viewModel.loadTopStories() }
+        binding.itemRecycler.adapter = storyAdapter
 
         val savedStories = savedInstanceState?.let { bundle ->
             bundle.getString(STATE_STORIES)?.let { itemsJson ->
@@ -125,12 +118,8 @@ class MainActivity : BaseActivity() {
             return
         }
 
-        progressView.visibility = Util.setVisibility(true)
-
 
         viewModel.items.observe(this) { items ->
-            progressView.visibility = View.GONE
-            swipeRefreshLayout.isRefreshing = false
             storyAdapter.stories = items.toMutableList()
             storyAdapter.alreadyReadStories = ArticlePreferences.getArticleIds(this@MainActivity)
             storyAdapter.notifyDataSetChanged()
@@ -214,7 +203,6 @@ class MainActivity : BaseActivity() {
     override fun onOptionsItemSelected(item: MenuItem?): Boolean {
         return when (item?.itemId) {
             R.id.refresh -> {
-                progressView.visibility = Util.setVisibility(true)
                 viewModel.loadTopStories()
                 return true
             }
@@ -228,6 +216,10 @@ class MainActivity : BaseActivity() {
         }
 
         super.onSaveInstanceState(outState, outPersistentState)
+    }
+
+    fun onRefresh() {
+        viewModel.loadTopStories(true)
     }
 
     override fun onDestroy() {
