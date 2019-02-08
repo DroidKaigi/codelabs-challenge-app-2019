@@ -5,6 +5,7 @@ import android.support.v7.widget.RecyclerView
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import droidkaigi.github.io.challenge2019.data.api.response.Item
+import droidkaigi.github.io.challenge2019.databinding.ItemFooterBinding
 import droidkaigi.github.io.challenge2019.databinding.ItemStoryBinding
 
 
@@ -13,51 +14,73 @@ class StoryAdapter(
     private val onClickItem: ((Item) -> Unit)? = null,
     private val onClickMenuItem: ((Item, Int) -> Unit)? = null,
     var alreadyReadStories: Set<String>
-) : RecyclerView.Adapter<StoryAdapter.ViewHolder>() {
+) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
-    class ViewHolder(val binding: ItemStoryBinding) : RecyclerView.ViewHolder(binding.root)
-
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-        val binding = ItemStoryBinding.inflate(LayoutInflater.from(parent.context), parent, false)
-        return ViewHolder(binding)
+    enum class ViewType(val id: Int) {
+        ItemStory(0),
+        Footer(1)
     }
 
-    override fun getItemCount(): Int = stories.size
+    class ItemStoryViewHolder(val binding: ItemStoryBinding) : RecyclerView.ViewHolder(binding.root)
 
-    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        val item = stories[position]
+    class FooterViewHolder(binding: ItemFooterBinding) : RecyclerView.ViewHolder(binding.root)
 
-        if (item != null) {
-            holder.binding.alreadyRead = false
-            alreadyReadStories.forEach {id ->
-                if (id.toLong() == item.id) {
-                    holder.binding.alreadyRead = true
-                }
-            }
-            holder.binding.item = item
-            holder.binding.root.setOnClickListener {
-                onClickItem?.invoke(item)
-            }
-            holder.binding.menuButton.setOnClickListener {
-                val popupMenu = PopupMenu(holder.binding.menuButton.context, holder.binding.menuButton)
-                popupMenu.inflate(R.menu.story_menu)
-                popupMenu.setOnMenuItemClickListener { menuItem ->
-                    val menuItemId = menuItem.itemId
-                    when (menuItemId) {
-                        R.id.copy_url,
-                        R.id.refresh -> {
-                            onClickMenuItem?.invoke(item, menuItemId)
-                            true
-                        }
-                        else -> false
-                    }
-                }
-                popupMenu.show()
-            }
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+        return if (viewType == ViewType.ItemStory.id) {
+            val binding = ItemStoryBinding.inflate(LayoutInflater.from(parent.context), parent, false)
+            ItemStoryViewHolder(binding)
         } else {
-            holder.binding.item = null
-            holder.binding.root.setOnClickListener(null)
-            holder.binding.menuButton.setOnClickListener(null)
+            val binding = ItemFooterBinding.inflate(LayoutInflater.from(parent.context), parent, false)
+            FooterViewHolder(binding)
+        }
+    }
+
+    override fun getItemCount(): Int = if (stories.isEmpty()) 0 else stories.size + 1
+
+    override fun getItemViewType(position: Int): Int {
+        if (position == stories.size) {
+            return ViewType.Footer.id
+        }
+        return ViewType.ItemStory.id
+    }
+
+    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+        when (holder) {
+            is ItemStoryViewHolder -> {
+                val item = stories[position]
+                if (item != null) {
+                    holder.binding.alreadyRead = false
+                    alreadyReadStories.forEach { id ->
+                        if (id.toLong() == item.id) {
+                            holder.binding.alreadyRead = true
+                        }
+                    }
+                    holder.binding.item = item
+                    holder.binding.root.setOnClickListener {
+                        onClickItem?.invoke(item)
+                    }
+                    holder.binding.menuButton.setOnClickListener {
+                        val popupMenu = PopupMenu(holder.binding.menuButton.context, holder.binding.menuButton)
+                        popupMenu.inflate(R.menu.story_menu)
+                        popupMenu.setOnMenuItemClickListener { menuItem ->
+                            val menuItemId = menuItem.itemId
+                            when (menuItemId) {
+                                R.id.copy_url,
+                                R.id.refresh -> {
+                                    onClickMenuItem?.invoke(item, menuItemId)
+                                    true
+                                }
+                                else -> false
+                            }
+                        }
+                        popupMenu.show()
+                    }
+                } else {
+                    holder.binding.item = null
+                    holder.binding.root.setOnClickListener(null)
+                    holder.binding.menuButton.setOnClickListener(null)
+                }
+            }
         }
     }
 }
