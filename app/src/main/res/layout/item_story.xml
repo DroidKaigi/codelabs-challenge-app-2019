@@ -9,7 +9,7 @@
 
         <variable
                 name="item"
-                type="droidkaigi.github.io.challenge2019.data.api.response.Item"
+                type="droidkaigi.github.io.challenge2019.core.data.api.response.Item"
         />
 
         <variable
