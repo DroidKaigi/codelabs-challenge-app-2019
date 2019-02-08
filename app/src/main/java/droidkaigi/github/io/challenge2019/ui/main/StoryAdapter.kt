@@ -29,11 +29,7 @@ class StoryAdapter(
 
         if (story != null) {
             holder.binding.alreadyRead = false
-            alreadyReadStories.forEach {id ->
-                if (id.toLong() == story.id) {
-                    holder.binding.alreadyRead = true
-                }
-            }
+            holder.binding.alreadyRead = alreadyReadStories.contains(story.id.toString())
             holder.binding.story = story
             holder.binding.root.setOnClickListener {
                 onClickItem?.invoke(story)

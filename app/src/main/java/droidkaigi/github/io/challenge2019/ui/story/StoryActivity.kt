@@ -1,5 +1,6 @@
 package droidkaigi.github.io.challenge2019.ui.story
 
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
@@ -104,11 +105,10 @@ class StoryActivity : AppCompatActivity() {
                 return true
             }
             android.R.id.home -> {
-                // TODO: あとで
-//                val intent = Intent().apply {
-//                    putExtra(READ_ARTICLE_ID, this@StoryActivity.item?.id)
-//                }
-//                setResult(Activity.RESULT_OK, intent)
+                val intent = Intent().apply {
+                    putExtra(READ_ARTICLE_ID, story.id)
+                }
+                setResult(Activity.RESULT_OK, intent)
                 finish()
                 return true
             }
