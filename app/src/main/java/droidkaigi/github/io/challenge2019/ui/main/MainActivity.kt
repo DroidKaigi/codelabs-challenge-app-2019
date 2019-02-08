@@ -5,7 +5,6 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
-import android.os.AsyncTask
 import android.os.Bundle
 import android.os.PersistableBundle
 import android.view.MenuItem
@@ -13,6 +12,7 @@ import androidx.databinding.DataBindingUtil
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelProviders
 import androidx.lifecycle.observe
+import androidx.recyclerview.widget.DividerItemDecoration
 import com.squareup.moshi.Types
 import droidkaigi.github.io.challenge2019.BaseActivity
 import droidkaigi.github.io.challenge2019.R
@@ -33,7 +33,6 @@ class MainActivity : BaseActivity() {
 
     private lateinit var storyAdapter: StoryAdapter
 
-    private var getStoriesTask: AsyncTask<Long, Unit, List<Item?>>? = null
     private val itemJsonAdapter = moshi.adapter(Item::class.java)
     private val itemsJsonAdapter =
         moshi.adapter<List<Item?>>(Types.newParameterizedType(List::class.java, Item::class.java))
@@ -56,11 +55,7 @@ class MainActivity : BaseActivity() {
         binding.handler = this
         binding.viewModel = viewModel
 
-        val itemDecoration = androidx.recyclerview.widget.DividerItemDecoration(
-            this,
-            androidx.recyclerview.widget.DividerItemDecoration.VERTICAL
-        )
-        binding.itemRecycler.addItemDecoration(itemDecoration)
+        binding.itemRecycler.addItemDecoration(DividerItemDecoration(this, DividerItemDecoration.VERTICAL))
         storyAdapter = StoryAdapter(
             stories = mutableListOf(),
             onClickItem = { item ->
@@ -128,63 +123,6 @@ class MainActivity : BaseActivity() {
         viewModel.loadTopStories()
     }
 
-//    private fun loadTopStories() {
-//        hackerNewsApi.getTopStories().enqueue(object : Callback<List<Long>> {
-//
-//            override fun onResponse(call: Call<List<Long>>, response: Response<List<Long>>) {
-//                if (!response.isSuccessful) return
-//
-//                response.body()?.let { itemIds ->
-//                    getStoriesTask = @SuppressLint("StaticFieldLeak") object : AsyncTask<Long, Unit, List<Item?>>() {
-//
-//                        override fun doInBackground(vararg itemIds: Long?): List<Item?> {
-//                            val ids = itemIds.mapNotNull { it }
-//                            val itemMap = ConcurrentHashMap<Long, Item?>()
-//                            val latch = CountDownLatch(ids.size)
-//
-//                            ids.forEach { id ->
-//                                hackerNewsApi.getItem(id).enqueue(object : Callback<Item> {
-//                                    override fun onResponse(call: Call<Item>, response: Response<Item>) {
-//                                        response.body()?.let { item -> itemMap[id] = item }
-//                                        latch.countDown()
-//                                    }
-//
-//                                    override fun onFailure(call: Call<Item>, t: Throwable) {
-//                                        showError(t)
-//                                        latch.countDown()
-//                                    }
-//                                })
-//                            }
-//
-//                            try {
-//                                latch.await()
-//                            } catch (e: InterruptedException) {
-//                                showError(e)
-//                                return emptyList()
-//                            }
-//
-//                            return ids.map { itemMap[it] }
-//                        }
-//
-//                        override fun onPostExecute(items: List<Item?>) {
-//                            progressView.visibility = View.GONE
-//                            swipeRefreshLayout.isRefreshing = false
-//                            storyAdapter.stories = items.toMutableList()
-//                            storyAdapter.alreadyReadStories = ArticlePreferences.getArticleIds(this@MainActivity)
-//                            storyAdapter.notifyDataSetChanged()
-//                        }
-//                    }
-//
-//                    getStoriesTask?.execute(*itemIds.take(20).toTypedArray())
-//                }
-//            }
-//
-//            override fun onFailure(call: Call<List<Long>>, t: Throwable) {
-//                showError(t)
-//            }
-//        })
-//    }
-
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         when (resultCode) {
             Activity.RESULT_OK -> {
@@ -220,12 +158,5 @@ class MainActivity : BaseActivity() {
 
     fun onRefresh() {
         viewModel.loadTopStories(true)
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        getStoriesTask?.run {
-            if (!isCancelled) cancel(true)
-        }
     }
 }
