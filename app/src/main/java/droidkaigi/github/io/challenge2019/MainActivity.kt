@@ -8,9 +8,9 @@ import android.content.Context
 import android.content.Intent
 import android.os.AsyncTask
 import android.os.Bundle
-import android.support.v4.widget.SwipeRefreshLayout
-import android.support.v7.widget.DividerItemDecoration
-import android.support.v7.widget.RecyclerView
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+import androidx.recyclerview.widget.DividerItemDecoration
+import androidx.recyclerview.widget.RecyclerView
 import android.util.Log
 import android.view.MenuItem
 import android.view.View
@@ -32,9 +32,9 @@ class MainActivity : BaseActivity() {
         private const val STATE_STORIES = "stories"
     }
 
-    private lateinit var recyclerView: RecyclerView
+    private lateinit var recyclerView: androidx.recyclerview.widget.RecyclerView
     private lateinit var progressView: ProgressBar
-    private lateinit var swipeRefreshLayout: SwipeRefreshLayout
+    private lateinit var swipeRefreshLayout: androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 
     private lateinit var storyAdapter: StoryAdapter
     private lateinit var hackerNewsApi: HackerNewsApi
@@ -59,7 +59,10 @@ class MainActivity : BaseActivity() {
 
         hackerNewsApi = retrofit.create(HackerNewsApi::class.java)
 
-        val itemDecoration = DividerItemDecoration(recyclerView.context, DividerItemDecoration.VERTICAL)
+        val itemDecoration = androidx.recyclerview.widget.DividerItemDecoration(
+            recyclerView.context,
+            androidx.recyclerview.widget.DividerItemDecoration.VERTICAL
+        )
         recyclerView.addItemDecoration(itemDecoration)
         storyAdapter = StoryAdapter(
             stories = mutableListOf(),

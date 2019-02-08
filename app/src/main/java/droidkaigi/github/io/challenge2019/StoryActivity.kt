@@ -5,8 +5,8 @@ import android.app.Activity
 import android.content.Intent
 import android.os.AsyncTask
 import android.os.Bundle
-import android.support.v7.widget.DividerItemDecoration
-import android.support.v7.widget.RecyclerView
+import androidx.recyclerview.widget.DividerItemDecoration
+import androidx.recyclerview.widget.RecyclerView
 import android.view.MenuItem
 import android.view.View
 import android.webkit.WebResourceError
@@ -32,7 +32,7 @@ class StoryActivity : BaseActivity() {
     }
 
     private lateinit var webView: WebView
-    private lateinit var recyclerView: RecyclerView
+    private lateinit var recyclerView: androidx.recyclerview.widget.RecyclerView
     private lateinit var progressView: ProgressBar
 
     private lateinit var commentAdapter: CommentAdapter
@@ -65,7 +65,10 @@ class StoryActivity : BaseActivity() {
         hackerNewsApi = retrofit.create(HackerNewsApi::class.java)
 
         recyclerView.isNestedScrollingEnabled = false
-        val itemDecoration = DividerItemDecoration(recyclerView.context, DividerItemDecoration.VERTICAL)
+        val itemDecoration = androidx.recyclerview.widget.DividerItemDecoration(
+            recyclerView.context,
+            androidx.recyclerview.widget.DividerItemDecoration.VERTICAL
+        )
         recyclerView.addItemDecoration(itemDecoration)
         commentAdapter = CommentAdapter(emptyList())
         recyclerView.adapter = commentAdapter

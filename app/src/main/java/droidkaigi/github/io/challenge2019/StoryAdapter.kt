@@ -1,7 +1,7 @@
 package droidkaigi.github.io.challenge2019
 
-import android.support.v7.widget.PopupMenu
-import android.support.v7.widget.RecyclerView
+import androidx.appcompat.widget.PopupMenu
+import androidx.recyclerview.widget.RecyclerView
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import droidkaigi.github.io.challenge2019.data.api.response.Item
@@ -13,9 +13,9 @@ class StoryAdapter(
     private val onClickItem: ((Item) -> Unit)? = null,
     private val onClickMenuItem: ((Item, Int) -> Unit)? = null,
     var alreadyReadStories: Set<String>
-) : RecyclerView.Adapter<StoryAdapter.ViewHolder>() {
+) : androidx.recyclerview.widget.RecyclerView.Adapter<StoryAdapter.ViewHolder>() {
 
-    class ViewHolder(val binding: ItemStoryBinding) : RecyclerView.ViewHolder(binding.root)
+    class ViewHolder(val binding: ItemStoryBinding) : androidx.recyclerview.widget.RecyclerView.ViewHolder(binding.root)
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val binding = ItemStoryBinding.inflate(LayoutInflater.from(parent.context), parent, false)
