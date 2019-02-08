@@ -11,7 +11,6 @@ import android.os.Bundle
 import android.support.v4.widget.SwipeRefreshLayout
 import android.support.v7.widget.DividerItemDecoration
 import android.support.v7.widget.RecyclerView
-import android.util.Log
 import android.view.MenuItem
 import android.view.View
 import android.widget.ProgressBar
@@ -20,9 +19,11 @@ import droidkaigi.github.io.challenge2019.data.api.HackerNewsApi
 import droidkaigi.github.io.challenge2019.data.api.response.Item
 import droidkaigi.github.io.challenge2019.data.db.ArticlePreferences
 import droidkaigi.github.io.challenge2019.data.db.ArticlePreferences.Companion.saveArticleIds
+import droidkaigi.github.io.challenge2019.ingest.IngestManager
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
+import timber.log.Timber
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CountDownLatch
 
@@ -44,6 +45,7 @@ class MainActivity : BaseActivity() {
     private val itemsJsonAdapter =
         moshi.adapter<List<Item?>>(Types.newParameterizedType(List::class.java, Item::class.java))
 
+    private val ingestManager = IngestManager()
 
     override fun getContentView(): Int {
         return R.layout.activity_main
@@ -73,6 +75,7 @@ class MainActivity : BaseActivity() {
             onClickMenuItem = { item, menuItemId ->
                 when (menuItemId) {
                     R.id.copy_url -> {
+                        track()
                         val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                         clipboard.primaryClip = ClipData.newPlainText("url", item.url)
                     }
@@ -81,11 +84,12 @@ class MainActivity : BaseActivity() {
                             override fun onResponse(call: Call<Item>, response: Response<Item>) {
                                 response.body()?.let { newItem ->
                                     val index = storyAdapter.stories.indexOf(item)
-                                    if (index == -1 ) return
+                                    if (index == -1) return
 
                                     storyAdapter.stories[index] = newItem
                                     runOnUiThread {
-                                        storyAdapter.alreadyReadStories = ArticlePreferences.getArticleIds(this@MainActivity)
+                                        storyAdapter.alreadyReadStories =
+                                            ArticlePreferences.getArticleIds(this@MainActivity)
                                         storyAdapter.notifyItemChanged(index)
                                     }
                                 }
@@ -100,6 +104,7 @@ class MainActivity : BaseActivity() {
             },
             alreadyReadStories = ArticlePreferences.getArticleIds(this)
         )
+
         recyclerView.adapter = storyAdapter
 
         swipeRefreshLayout.setOnRefreshListener { loadTopStories() }
@@ -160,6 +165,8 @@ class MainActivity : BaseActivity() {
                         }
 
                         override fun onPostExecute(items: List<Item?>) {
+                            track()
+
                             progressView.visibility = View.GONE
                             swipeRefreshLayout.isRefreshing = false
                             storyAdapter.stories = items.toMutableList()
@@ -178,8 +185,15 @@ class MainActivity : BaseActivity() {
         })
     }
 
+    private fun track() {
+        Thread(Runnable {
+            val responseCode = ingestManager.track()
+            Timber.d("IngestManager#track code:$responseCode")
+        }).start()
+    }
+
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        when(resultCode) {
+        when (resultCode) {
             Activity.RESULT_OK -> {
                 data?.getLongExtra(StoryActivity.READ_ARTICLE_ID, 0L)?.let { id ->
                     if (id != 0L) {
