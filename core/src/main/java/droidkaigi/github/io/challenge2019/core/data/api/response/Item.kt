@@ -1,7 +1,9 @@
-package droidkaigi.github.io.challenge2019.data.api.response
+package droidkaigi.github.io.challenge2019.core.data.api.response
 
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
+import droidkaigi.github.io.challenge2019.core.data.model.Comment
+import droidkaigi.github.io.challenge2019.core.data.model.Story
 
 @JsonClass(generateAdapter = true)
 data class Item(
@@ -12,7 +14,7 @@ data class Item(
     @Json(name = "type")
     val type: String = "",
     @Json(name = "by")
-    val author: String,
+    val author: String = "",
     @Json(name = "time")
     val time: Long = 0L,
     @Json(name = "text")
@@ -39,4 +41,19 @@ data class Item(
     companion object {
         const val NO_ID = -1L
     }
+
+    fun toStory() = Story(
+        id,
+        title,
+        url,
+        score,
+        author,
+        kids
+    )
+
+    fun toComment() = Comment(
+        id,
+        author,
+        text
+    )
 }
