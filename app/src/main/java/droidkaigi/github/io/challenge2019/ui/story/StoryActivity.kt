@@ -4,25 +4,27 @@ import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
 import android.os.PersistableBundle
+import android.view.Menu
 import android.view.MenuItem
 import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import androidx.appcompat.app.AppCompatActivity
 import androidx.databinding.DataBindingUtil
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelProviders
 import androidx.lifecycle.observe
 import androidx.recyclerview.widget.DividerItemDecoration
+import com.squareup.moshi.Moshi
 import com.squareup.moshi.Types
-import droidkaigi.github.io.challenge2019.BaseActivity
 import droidkaigi.github.io.challenge2019.R
 import droidkaigi.github.io.challenge2019.core.data.api.response.Item
 import droidkaigi.github.io.challenge2019.databinding.ActivityStoryBinding
 import droidkaigi.github.io.challenge2019.di.component
 import javax.inject.Inject
 
-class StoryActivity : BaseActivity() {
+class StoryActivity : AppCompatActivity() {
 
     companion object {
         const val EXTRA_ITEM_JSON = "droidkaigi.github.io.challenge2019.EXTRA_ITEM_JSON"
@@ -39,6 +41,7 @@ class StoryActivity : BaseActivity() {
 
     private lateinit var commentAdapter: CommentAdapter
 
+    private val moshi = Moshi.Builder().build()
     private val itemJsonAdapter = moshi.adapter(Item::class.java)
     private val itemsJsonAdapter =
         moshi.adapter<List<Item?>>(Types.newParameterizedType(List::class.java, Item::class.java))
@@ -101,8 +104,17 @@ class StoryActivity : BaseActivity() {
         binding.webView.loadUrl(item.url)
     }
 
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.activity_menu, menu)
+        return true
+    }
+
     override fun onOptionsItemSelected(item: MenuItem?): Boolean {
         return when (item?.itemId) {
+            R.id.exit -> {
+                this.finish()
+                return true
+            }
             R.id.refresh -> {
                 loadUrl()
                 viewModel.getComments(this.item)

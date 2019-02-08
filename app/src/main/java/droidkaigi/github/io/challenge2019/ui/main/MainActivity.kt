@@ -7,14 +7,16 @@ import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.os.PersistableBundle
+import android.view.Menu
 import android.view.MenuItem
+import androidx.appcompat.app.AppCompatActivity
 import androidx.databinding.DataBindingUtil
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelProviders
 import androidx.lifecycle.observe
 import androidx.recyclerview.widget.DividerItemDecoration
+import com.squareup.moshi.Moshi
 import com.squareup.moshi.Types
-import droidkaigi.github.io.challenge2019.BaseActivity
 import droidkaigi.github.io.challenge2019.R
 import droidkaigi.github.io.challenge2019.core.data.api.response.Item
 import droidkaigi.github.io.challenge2019.data.db.ArticlePreferences
@@ -24,14 +26,16 @@ import droidkaigi.github.io.challenge2019.di.component
 import droidkaigi.github.io.challenge2019.ui.story.StoryActivity
 import javax.inject.Inject
 
-class MainActivity : BaseActivity() {
+class MainActivity : AppCompatActivity() {
 
     companion object {
         private const val STATE_STORIES = "stories"
+        private const val ACTIVITY_REQUEST = 1
     }
 
     private lateinit var storyAdapter: StoryAdapter
 
+    private val moshi = Moshi.Builder().build()
     private val itemJsonAdapter = moshi.adapter(Item::class.java)
     private val itemsJsonAdapter =
         moshi.adapter<List<Item?>>(Types.newParameterizedType(List::class.java, Item::class.java))
@@ -59,11 +63,10 @@ class MainActivity : BaseActivity() {
             stories = mutableListOf(),
             onClickItem = { item ->
                 val itemJson = itemJsonAdapter.toJson(item)
-                val intent =
-                    Intent(this@MainActivity, StoryActivity::class.java).apply {
-                        putExtra(StoryActivity.EXTRA_ITEM_JSON, itemJson)
-                    }
-                startActivityForResult(intent)
+                val intent = Intent(this@MainActivity, StoryActivity::class.java).apply {
+                    putExtra(StoryActivity.EXTRA_ITEM_JSON, itemJson)
+                }
+                startActivityForResult(intent, ACTIVITY_REQUEST)
             },
             onClickMenuItem = { item, menuItemId ->
                 when (menuItemId) {
@@ -137,8 +140,17 @@ class MainActivity : BaseActivity() {
         super.onActivityResult(requestCode, resultCode, data)
     }
 
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.activity_menu, menu)
+        return true
+    }
+
     override fun onOptionsItemSelected(item: MenuItem?): Boolean {
         return when (item?.itemId) {
+            R.id.exit -> {
+                this.finish()
+                return true
+            }
             R.id.refresh -> {
                 viewModel.loadTopStories()
                 return true
