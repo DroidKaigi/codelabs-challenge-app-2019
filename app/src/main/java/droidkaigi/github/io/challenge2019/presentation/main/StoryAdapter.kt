@@ -1,9 +1,9 @@
-package droidkaigi.github.io.challenge2019
+package droidkaigi.github.io.challenge2019.presentation.main
 
-import android.support.v7.widget.PopupMenu
-import android.support.v7.widget.RecyclerView
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import androidx.appcompat.widget.PopupMenu
+import droidkaigi.github.io.challenge2019.R
 import droidkaigi.github.io.challenge2019.data.api.response.Item
 import droidkaigi.github.io.challenge2019.databinding.ItemFooterBinding
 import droidkaigi.github.io.challenge2019.databinding.ItemStoryBinding
@@ -14,18 +14,23 @@ class StoryAdapter(
     private val onClickItem: ((Item) -> Unit)? = null,
     private val onClickMenuItem: ((Item, Int) -> Unit)? = null,
     var alreadyReadStories: Set<String>
-) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+) : androidx.recyclerview.widget.RecyclerView.Adapter<androidx.recyclerview.widget.RecyclerView.ViewHolder>() {
 
     enum class ViewType(val id: Int) {
         ItemStory(0),
         Footer(1)
     }
 
-    class ItemStoryViewHolder(val binding: ItemStoryBinding) : RecyclerView.ViewHolder(binding.root)
+    class ItemStoryViewHolder(val binding: ItemStoryBinding) :
+        androidx.recyclerview.widget.RecyclerView.ViewHolder(binding.root)
 
-    class FooterViewHolder(binding: ItemFooterBinding) : RecyclerView.ViewHolder(binding.root)
+    class FooterViewHolder(binding: ItemFooterBinding) :
+        androidx.recyclerview.widget.RecyclerView.ViewHolder(binding.root)
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+    override fun onCreateViewHolder(
+        parent: ViewGroup,
+        viewType: Int
+    ): androidx.recyclerview.widget.RecyclerView.ViewHolder {
         return if (viewType == ViewType.ItemStory.id) {
             val binding = ItemStoryBinding.inflate(LayoutInflater.from(parent.context), parent, false)
             ItemStoryViewHolder(binding)
@@ -44,7 +49,7 @@ class StoryAdapter(
         return ViewType.ItemStory.id
     }
 
-    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+    override fun onBindViewHolder(holder: androidx.recyclerview.widget.RecyclerView.ViewHolder, position: Int) {
         when (holder) {
             is ItemStoryViewHolder -> {
                 val item = stories[position]

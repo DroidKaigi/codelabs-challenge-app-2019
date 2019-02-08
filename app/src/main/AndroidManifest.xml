@@ -15,7 +15,7 @@
             android:name=".MyApplication"
             tools:ignore="GoogleAppIndexingWarning">
         <activity
-                android:name=".MainActivity"
+                android:name=".presentation.main.MainActivity"
         >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
@@ -24,8 +24,8 @@
             </intent-filter>
         </activity>
         <activity
-                android:name=".StoryActivity"
-                android:parentActivityName=".MainActivity"
+                android:name=".presentation.story.StoryActivity"
+                android:parentActivityName=".presentation.main.MainActivity"
         >
         </activity>
     </application>
