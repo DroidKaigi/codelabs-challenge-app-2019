@@ -6,6 +6,7 @@ import droidkaigi.github.io.challenge2019.core.data.model.Comment
 import droidkaigi.github.io.challenge2019.core.data.model.Story
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.withContext
 import java.io.IOException
 
@@ -23,16 +24,16 @@ class HackerNewsDataRepository(
 
         ids.map { id ->
             async { getItem(id) }
-        }.map {
-            it.await().toStory()
+        }.awaitAll().map {
+            it.toStory()
         }
     }
 
     override suspend fun getComments(story: Story): List<Comment> = withContext(Dispatchers.IO) {
         story.commentIds.map { id ->
             async { getItem(id) }
-        }.map {
-            it.await().toComment()
+        }.awaitAll().map {
+            it.toComment()
         }
     }
 

@@ -19,7 +19,6 @@ import droidkaigi.github.io.challenge2019.R
 import droidkaigi.github.io.challenge2019.core.data.model.Story
 import droidkaigi.github.io.challenge2019.databinding.ActivityStoryBinding
 import droidkaigi.github.io.challenge2019.di.component
-import timber.log.Timber
 import javax.inject.Inject
 
 class StoryActivity : AppCompatActivity() {
@@ -62,7 +61,6 @@ class StoryActivity : AppCompatActivity() {
         binding.commentRecycler.adapter = commentAdapter
 
         viewModel.comments.observe(this) { comments ->
-            Timber.w("comments.size: ${comments.size}")
             commentAdapter.comments = comments
             commentAdapter.notifyDataSetChanged()
         }
