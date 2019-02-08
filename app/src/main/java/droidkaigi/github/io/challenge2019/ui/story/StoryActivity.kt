@@ -1,18 +1,16 @@
 package droidkaigi.github.io.challenge2019.ui.story
 
-import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Intent
-import android.os.AsyncTask
 import android.os.Bundle
 import android.os.PersistableBundle
 import android.view.MenuItem
-import android.view.View
 import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.ProgressBar
+import androidx.databinding.DataBindingUtil
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelProviders
 import androidx.lifecycle.observe
@@ -22,8 +20,8 @@ import droidkaigi.github.io.challenge2019.R
 import droidkaigi.github.io.challenge2019.Util
 import droidkaigi.github.io.challenge2019.core.data.api.HackerNewsApi
 import droidkaigi.github.io.challenge2019.core.data.api.response.Item
+import droidkaigi.github.io.challenge2019.databinding.ActivityStoryBinding
 import droidkaigi.github.io.challenge2019.di.component
-import java.util.concurrent.CountDownLatch
 import javax.inject.Inject
 
 class StoryActivity : BaseActivity() {
@@ -48,8 +46,6 @@ class StoryActivity : BaseActivity() {
     private lateinit var commentAdapter: CommentAdapter
     private lateinit var hackerNewsApi: HackerNewsApi
 
-    private var getCommentsTask: AsyncTask<Long, Unit, List<Item?>>? = null
-    private var hideProgressTask: AsyncTask<Unit, Unit, Unit>? = null
     private val itemJsonAdapter = moshi.adapter(Item::class.java)
     private val itemsJsonAdapter =
         moshi.adapter<List<Item?>>(Types.newParameterizedType(List::class.java, Item::class.java))
@@ -60,15 +56,17 @@ class StoryActivity : BaseActivity() {
         } ?: throw IllegalArgumentException()
     }
 
+    private lateinit var binding: ActivityStoryBinding
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         component().inject(this)
-        setContentView(R.layout.activity_story)
+        binding = DataBindingUtil.setContentView(this, R.layout.activity_story)
+        binding.lifecycleOwner = this
+        binding.viewModel = viewModel
 
-        viewModel.getComments(item)
         webView = findViewById(R.id.web_view)
         recyclerView = findViewById(R.id.comment_recycler)
-        progressView = findViewById(R.id.progress)
 
         val retrofit = createRetrofit("https://hacker-news.firebaseio.com/v0/")
 
@@ -92,11 +90,9 @@ class StoryActivity : BaseActivity() {
         if (savedComments != null) {
             commentAdapter.comments = savedComments
             commentAdapter.notifyDataSetChanged()
-            webView.loadUrl(item!!.url)
+            webView.loadUrl(item.url)
             return
         }
-
-        progressView.visibility = View.VISIBLE
 
         viewModel.comments.observe(this) { items ->
             commentAdapter.comments = items
@@ -104,41 +100,23 @@ class StoryActivity : BaseActivity() {
         }
 
         viewModel.getComments(item)
-
         loadUrl()
     }
 
     private fun loadUrl() {
-        val progressLatch = CountDownLatch(2)
-
-        hideProgressTask = @SuppressLint("StaticFieldLeak") object : AsyncTask<Unit, Unit, Unit>() {
-
-            override fun doInBackground(vararg unit: Unit?) {
-                try {
-                    progressLatch.await()
-                } catch (e: InterruptedException) {
-                    showError(e)
-                }
-            }
-
-            override fun onPostExecute(result: Unit?) {
-                progressView.visibility = Util.setVisibility(false)
-            }
-        }
-
-        hideProgressTask?.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR)
-
         webView.webViewClient = object : WebViewClient() {
 
             override fun onPageFinished(view: WebView?, url: String?) {
-                progressLatch.countDown()
+                viewModel.isWebLoading.value = false
             }
 
             override fun onReceivedError(view: WebView?, request: WebResourceRequest?, error: WebResourceError?) {
-                progressLatch.countDown()
+                viewModel.isWebLoading.value = false
             }
         }
-        webView.loadUrl(item!!.url)
+
+        viewModel.isWebLoading.value = true
+        webView.loadUrl(item.url)
     }
 
     override fun onOptionsItemSelected(item: MenuItem?): Boolean {
@@ -166,15 +144,5 @@ class StoryActivity : BaseActivity() {
             putString(STATE_COMMENTS, itemsJsonAdapter.toJson(commentAdapter.comments))
         }
         super.onSaveInstanceState(outState, outPersistentState)
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        getCommentsTask?.run {
-            if (!isCancelled) cancel(true)
-        }
-        hideProgressTask?.run {
-            if (!isCancelled) cancel(true)
-        }
     }
 }
