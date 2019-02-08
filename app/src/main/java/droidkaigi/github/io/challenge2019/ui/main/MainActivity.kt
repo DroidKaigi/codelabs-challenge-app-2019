@@ -6,7 +6,6 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import android.os.PersistableBundle
 import android.view.Menu
 import android.view.MenuItem
 import androidx.appcompat.app.AppCompatActivity
@@ -15,10 +14,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelProviders
 import androidx.lifecycle.observe
 import androidx.recyclerview.widget.DividerItemDecoration
-import com.squareup.moshi.Moshi
-import com.squareup.moshi.Types
 import droidkaigi.github.io.challenge2019.R
-import droidkaigi.github.io.challenge2019.core.data.api.response.Item
 import droidkaigi.github.io.challenge2019.data.db.ArticlePreferences
 import droidkaigi.github.io.challenge2019.data.db.ArticlePreferences.Companion.saveArticleIds
 import droidkaigi.github.io.challenge2019.databinding.ActivityMainBinding
@@ -29,16 +25,10 @@ import javax.inject.Inject
 class MainActivity : AppCompatActivity() {
 
     companion object {
-        private const val STATE_STORIES = "stories"
         private const val ACTIVITY_REQUEST = 1
     }
 
     private lateinit var storyAdapter: StoryAdapter
-
-    private val moshi = Moshi.Builder().build()
-    private val itemJsonAdapter = moshi.adapter(Item::class.java)
-    private val itemsJsonAdapter =
-        moshi.adapter<List<Item?>>(Types.newParameterizedType(List::class.java, Item::class.java))
 
     @Inject
     lateinit var viewModelFactory: ViewModelProvider.Factory
@@ -61,11 +51,8 @@ class MainActivity : AppCompatActivity() {
         binding.itemRecycler.addItemDecoration(DividerItemDecoration(this, DividerItemDecoration.VERTICAL))
         storyAdapter = StoryAdapter(
             stories = mutableListOf(),
-            onClickItem = { item ->
-                val itemJson = itemJsonAdapter.toJson(item)
-                val intent = Intent(this@MainActivity, StoryActivity::class.java).apply {
-                    putExtra(StoryActivity.EXTRA_ITEM_JSON, itemJson)
-                }
+            onClickItem = { story ->
+                val intent = StoryActivity.createIntent(this, story)
                 startActivityForResult(intent, ACTIVITY_REQUEST)
             },
             onClickMenuItem = { item, menuItemId ->
@@ -102,27 +89,15 @@ class MainActivity : AppCompatActivity() {
         )
         binding.itemRecycler.adapter = storyAdapter
 
-        val savedStories = savedInstanceState?.let { bundle ->
-            bundle.getString(STATE_STORIES)?.let { itemsJson ->
-                itemsJsonAdapter.fromJson(itemsJson)
-            }
-        }
-
-        if (savedStories != null) {
-            storyAdapter.stories = savedStories.toMutableList()
-            storyAdapter.alreadyReadStories = ArticlePreferences.getArticleIds(this@MainActivity)
-            storyAdapter.notifyDataSetChanged()
-            return
-        }
-
-
-        viewModel.items.observe(this) { items ->
-            storyAdapter.stories = items.toMutableList()
+        viewModel.stories.observe(this) { stories ->
+            storyAdapter.stories = stories.toMutableList()
             storyAdapter.alreadyReadStories = ArticlePreferences.getArticleIds(this@MainActivity)
             storyAdapter.notifyDataSetChanged()
         }
 
         viewModel.loadTopStories()
+
+        // TODO: 回転の処理はViewModel使ってるので一旦無視
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -157,14 +132,6 @@ class MainActivity : AppCompatActivity() {
             }
             else -> super.onOptionsItemSelected(item)
         }
-    }
-
-    override fun onSaveInstanceState(outState: Bundle?, outPersistentState: PersistableBundle?) {
-        outState?.apply {
-            putString(STATE_STORIES, itemsJsonAdapter.toJson(storyAdapter.stories))
-        }
-
-        super.onSaveInstanceState(outState, outPersistentState)
     }
 
     fun onRefresh() {

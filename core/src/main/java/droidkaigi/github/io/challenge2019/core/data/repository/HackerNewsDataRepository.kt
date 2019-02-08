@@ -2,6 +2,7 @@ package droidkaigi.github.io.challenge2019.core.data.repository
 
 import droidkaigi.github.io.challenge2019.core.data.api.HackerNewsApi
 import droidkaigi.github.io.challenge2019.core.data.api.response.Item
+import droidkaigi.github.io.challenge2019.core.data.model.Story
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.withContext
@@ -10,7 +11,7 @@ import java.io.IOException
 class HackerNewsDataRepository(
     private val hackerNewsApi: HackerNewsApi
 ) : HackerNewsRepository {
-    override suspend fun getTopStories(): List<Item> = withContext(Dispatchers.IO) {
+    override suspend fun getTopStories(): List<Story> = withContext(Dispatchers.IO) {
         val call = hackerNewsApi.getTopStories()
         val response = call.execute()
         if (!response.isSuccessful) {
@@ -22,14 +23,12 @@ class HackerNewsDataRepository(
         ids.map { id ->
             async { getItem(id) }
         }.map {
-            it.await()
+            it.await().toStory()
         }
     }
 
-    override suspend fun getComments(item: Item): List<Item> = withContext(Dispatchers.IO) {
-        val kids = item.kids
-
-        kids.map { id ->
+    override suspend fun getComments(story: Story): List<Item> = withContext(Dispatchers.IO) {
+        story.commentIds.map { id ->
             async { getItem(id) }
         }.map {
             it.await()

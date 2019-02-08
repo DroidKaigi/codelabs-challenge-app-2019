@@ -1,6 +1,6 @@
 package droidkaigi.github.io.challenge2019.ui.story
 
-import android.app.Activity
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.os.PersistableBundle
@@ -20,6 +20,7 @@ import com.squareup.moshi.Moshi
 import com.squareup.moshi.Types
 import droidkaigi.github.io.challenge2019.R
 import droidkaigi.github.io.challenge2019.core.data.api.response.Item
+import droidkaigi.github.io.challenge2019.core.data.model.Story
 import droidkaigi.github.io.challenge2019.databinding.ActivityStoryBinding
 import droidkaigi.github.io.challenge2019.di.component
 import javax.inject.Inject
@@ -27,9 +28,14 @@ import javax.inject.Inject
 class StoryActivity : AppCompatActivity() {
 
     companion object {
-        const val EXTRA_ITEM_JSON = "droidkaigi.github.io.challenge2019.EXTRA_ITEM_JSON"
         const val READ_ARTICLE_ID = "read_article_id"
         private const val STATE_COMMENTS = "comments"
+
+        private const val EXTRA_STORY = "story"
+
+        fun createIntent(context: Context, story: Story) = Intent(context, StoryActivity::class.java).apply {
+            putExtra(EXTRA_STORY, story)
+        }
     }
 
     @Inject
@@ -46,10 +52,8 @@ class StoryActivity : AppCompatActivity() {
     private val itemsJsonAdapter =
         moshi.adapter<List<Item?>>(Types.newParameterizedType(List::class.java, Item::class.java))
 
-    private val item by lazy {
-        intent.getStringExtra(EXTRA_ITEM_JSON)?.let {
-            itemJsonAdapter.fromJson(it)
-        } ?: throw IllegalArgumentException()
+    private val story by lazy {
+        intent.getParcelableExtra(EXTRA_STORY) as Story
     }
 
     private lateinit var binding: ActivityStoryBinding
@@ -84,7 +88,7 @@ class StoryActivity : AppCompatActivity() {
             commentAdapter.notifyDataSetChanged()
         }
 
-        viewModel.getComments(item)
+        viewModel.getComments(story)
         loadUrl()
     }
 
@@ -101,7 +105,7 @@ class StoryActivity : AppCompatActivity() {
         }
 
         viewModel.isWebLoading.value = true
-        binding.webView.loadUrl(item.url)
+        binding.webView.loadUrl(story.url)
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
@@ -117,14 +121,15 @@ class StoryActivity : AppCompatActivity() {
             }
             R.id.refresh -> {
                 loadUrl()
-                viewModel.getComments(this.item)
+                viewModel.getComments(story)
                 return true
             }
             android.R.id.home -> {
-                val intent = Intent().apply {
-                    putExtra(READ_ARTICLE_ID, this@StoryActivity.item?.id)
-                }
-                setResult(Activity.RESULT_OK, intent)
+                // TODO: あとで
+//                val intent = Intent().apply {
+//                    putExtra(READ_ARTICLE_ID, this@StoryActivity.item?.id)
+//                }
+//                setResult(Activity.RESULT_OK, intent)
                 finish()
                 return true
             }
