@@ -8,8 +8,8 @@
     <data>
 
         <variable
-                name="item"
-                type="droidkaigi.github.io.challenge2019.data.api.response.Item"
+                name="story"
+                type="droidkaigi.github.io.challenge2019.data.model.Story"
         />
 
         <variable
@@ -20,7 +20,7 @@
     </data>
 
 
-    <android.support.constraint.ConstraintLayout
+    <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_margin="8dp"
@@ -31,7 +31,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:textAppearance="@style/TextAppearance.AppCompat.Title"
-                android:text="@{item.title}"
+                android:text="@{story.title}"
                 app:layout_constraintTop_toTopOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toStartOf="@id/menu_button"
@@ -39,7 +39,7 @@
                 android:textColor="@{alreadyRead ? @color/disabledText: @android:color/black}"
         />
 
-        <android.support.v7.widget.AppCompatImageButton
+        <androidx.appcompat.widget.AppCompatImageButton
                 android:id="@+id/menu_button"
                 android:layout_width="32dp"
                 android:layout_height="32dp"
@@ -51,12 +51,24 @@
         />
 
         <TextView
+                android:id="@+id/time"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textAppearance="@style/TextAppearance.AppCompat.Caption"
+                android:text="@{story.timeText}"
+                app:layout_constraintTop_toBottomOf="@id/title"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                tools:text="2019/1/1 0:00"
+        />
+
+        <TextView
                 android:id="@+id/url"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:textAppearance="@style/TextAppearance.AppCompat.Caption"
-                android:text="@{item.url}"
-                app:layout_constraintTop_toBottomOf="@id/title"
+                android:text="@{story.url}"
+                app:layout_constraintTop_toBottomOf="@id/time"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 tools:text="url"
@@ -67,13 +79,14 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:textAppearance="@style/TextAppearance.AppCompat.Caption"
-                android:text="@{item.score + ` points by ` + item.author}"
+                android:text="@{story.score + ` points by ` + story.author}"
                 app:layout_constraintTop_toBottomOf="@id/url"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
+                android:textColor="@{alreadyRead ? @color/disabledText: @android:color/black}"
                 tools:text="100 points by author"
         />
 
-    </android.support.constraint.ConstraintLayout>
+    </androidx.constraintlayout.widget.ConstraintLayout>
 </layout>

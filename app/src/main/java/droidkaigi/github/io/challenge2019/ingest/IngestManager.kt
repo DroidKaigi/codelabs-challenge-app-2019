@@ -2,9 +2,10 @@ package droidkaigi.github.io.challenge2019.ingest
 
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
+import javax.inject.Inject
 import kotlin.random.Random
 
-class IngestManager {
+class IngestManager @Inject constructor() {
 
     /**
      * 計測を行うメソッドです

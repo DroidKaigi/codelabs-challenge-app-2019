@@ -1,10 +1,13 @@
-package droidkaigi.github.io.challenge2019.data.api.response
+package droidkaigi.github.io.challenge2019.infrastructure.network
 
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
+import java.io.Serializable
+import java.text.SimpleDateFormat
+import java.util.*
 
 @JsonClass(generateAdapter = true)
-data class Item(
+data class ItemResponse(
     @Json(name = "id")
     val id: Long = NO_ID,
     @Json(name = "deleted")
@@ -12,7 +15,7 @@ data class Item(
     @Json(name = "type")
     val type: String = "",
     @Json(name = "by")
-    val author: String,
+    val author: String? = null,
     @Json(name = "time")
     val time: Long = 0L,
     @Json(name = "text")
@@ -35,8 +38,13 @@ data class Item(
     val parts: List<Long> = emptyList(),
     @Json(name = "descendants")
     val descendants: Int = 0
-) {
+) : Serializable {
     companion object {
         const val NO_ID = -1L
+
+        // TODO: Localeは変えられるようにする
+        private val df = SimpleDateFormat("yyyy/M/d H:MM", Locale.JAPAN)
     }
+
+    val timeText: String = df.format(Date(time * 1000))
 }
