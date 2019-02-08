@@ -3,6 +3,7 @@ package droidkaigi.github.io.challenge2019
 import android.app.Application
 import android.content.Context
 import com.facebook.stetho.Stetho
+import droidkaigi.github.io.challenge2019.core.data.di.CoreModule
 import droidkaigi.github.io.challenge2019.core.data.di.DaggerCoreComponent
 import timber.log.Timber
 import timber.log.Timber.DebugTree
@@ -11,7 +12,10 @@ import timber.log.Timber.DebugTree
 class MyApplication : Application() {
 
     private val coreComponent by lazy {
-        DaggerCoreComponent.builder().build()
+        DaggerCoreComponent
+            .builder()
+            .coreModule(CoreModule(this))
+            .build()
     }
 
     override fun onCreate() {

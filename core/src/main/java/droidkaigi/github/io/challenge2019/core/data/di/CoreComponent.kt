@@ -15,6 +15,7 @@ interface CoreComponent {
     @Component.Builder
     interface Builder {
         fun build(): CoreComponent
+        fun coreModule(coreModule: CoreModule): Builder
     }
 
     fun hackerNewsRepository(): HackerNewsRepository

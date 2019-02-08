@@ -12,7 +12,7 @@ class StoryAdapter(
     var stories: MutableList<Story?>,
     private val onClickItem: ((Story) -> Unit)? = null,
     private val onClickMenuItem: ((Story, Int) -> Unit)? = null,
-    var alreadyReadStories: Set<String>
+    var alreadyReadStories: Set<Long>
 ) : androidx.recyclerview.widget.RecyclerView.Adapter<StoryAdapter.ViewHolder>() {
 
     class ViewHolder(val binding: ItemStoryBinding) : androidx.recyclerview.widget.RecyclerView.ViewHolder(binding.root)
@@ -29,7 +29,7 @@ class StoryAdapter(
 
         if (story != null) {
             holder.binding.alreadyRead = false
-            holder.binding.alreadyRead = alreadyReadStories.contains(story.id.toString())
+            holder.binding.alreadyRead = alreadyReadStories.contains(story.id)
             holder.binding.story = story
             holder.binding.root.setOnClickListener {
                 onClickItem?.invoke(story)

@@ -15,8 +15,6 @@ import androidx.lifecycle.ViewModelProviders
 import androidx.lifecycle.observe
 import androidx.recyclerview.widget.DividerItemDecoration
 import droidkaigi.github.io.challenge2019.R
-import droidkaigi.github.io.challenge2019.data.db.ArticlePreferences
-import droidkaigi.github.io.challenge2019.data.db.ArticlePreferences.Companion.saveArticleIds
 import droidkaigi.github.io.challenge2019.databinding.ActivityMainBinding
 import droidkaigi.github.io.challenge2019.di.component
 import droidkaigi.github.io.challenge2019.ui.story.StoryActivity
@@ -85,13 +83,13 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
             },
-            alreadyReadStories = ArticlePreferences.getArticleIds(this)
+            alreadyReadStories = viewModel.getReadIds()
         )
         binding.itemRecycler.adapter = storyAdapter
 
         viewModel.stories.observe(this) { stories ->
             storyAdapter.stories = stories.toMutableList()
-            storyAdapter.alreadyReadStories = ArticlePreferences.getArticleIds(this@MainActivity)
+            storyAdapter.alreadyReadStories = viewModel.getReadIds()
             storyAdapter.notifyDataSetChanged()
         }
 
@@ -105,8 +103,8 @@ class MainActivity : AppCompatActivity() {
             Activity.RESULT_OK -> {
                 data?.getLongExtra(StoryActivity.READ_ARTICLE_ID, 0L)?.let { id ->
                     if (id != 0L) {
-                        saveArticleIds(this, id.toString())
-                        storyAdapter.alreadyReadStories = ArticlePreferences.getArticleIds(this)
+                        viewModel.saveReadId(id)
+                        storyAdapter.alreadyReadStories = viewModel.getReadIds()
                         storyAdapter.notifyDataSetChanged()
                     }
                 }

@@ -33,4 +33,12 @@ class MainViewModel @Inject constructor(
             // TODO: エラー対応
         }
     }
+
+    fun saveReadId(id: Long) {
+        hackerNewsRepository.saveReadStoryId(id)
+    }
+
+    fun getReadIds(): Set<Long> {
+        return hackerNewsRepository.getReadStoryIds()
+    }
 }
