@@ -16,13 +16,12 @@ import androidx.recyclerview.widget.DividerItemDecoration
 import com.squareup.moshi.Types
 import droidkaigi.github.io.challenge2019.BaseActivity
 import droidkaigi.github.io.challenge2019.R
-import droidkaigi.github.io.challenge2019.StoryActivity
-import droidkaigi.github.io.challenge2019.StoryAdapter
 import droidkaigi.github.io.challenge2019.core.data.api.response.Item
 import droidkaigi.github.io.challenge2019.data.db.ArticlePreferences
 import droidkaigi.github.io.challenge2019.data.db.ArticlePreferences.Companion.saveArticleIds
 import droidkaigi.github.io.challenge2019.databinding.ActivityMainBinding
 import droidkaigi.github.io.challenge2019.di.component
+import droidkaigi.github.io.challenge2019.ui.story.StoryActivity
 import javax.inject.Inject
 
 class MainActivity : BaseActivity() {

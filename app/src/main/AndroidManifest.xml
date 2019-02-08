@@ -24,7 +24,7 @@
             </intent-filter>
         </activity>
         <activity
-                android:name=".StoryActivity"
+                android:name=".ui.story.StoryActivity"
                 android:parentActivityName=".ui.main.MainActivity"
         >
         </activity>

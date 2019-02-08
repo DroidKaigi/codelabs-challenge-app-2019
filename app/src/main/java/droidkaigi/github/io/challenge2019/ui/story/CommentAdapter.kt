@@ -1,4 +1,4 @@
-package droidkaigi.github.io.challenge2019
+package droidkaigi.github.io.challenge2019.ui.story
 
 import android.view.LayoutInflater
 import android.view.ViewGroup

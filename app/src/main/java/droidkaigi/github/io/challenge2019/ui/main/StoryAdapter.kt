@@ -1,8 +1,9 @@
-package droidkaigi.github.io.challenge2019
+package droidkaigi.github.io.challenge2019.ui.main
 
-import androidx.appcompat.widget.PopupMenu
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import androidx.appcompat.widget.PopupMenu
+import droidkaigi.github.io.challenge2019.R
 import droidkaigi.github.io.challenge2019.core.data.api.response.Item
 import droidkaigi.github.io.challenge2019.databinding.ItemStoryBinding
 

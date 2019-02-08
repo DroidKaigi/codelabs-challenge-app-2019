@@ -7,6 +7,7 @@ import droidkaigi.github.io.challenge2019.core.data.di.CoreComponent
 import droidkaigi.github.io.challenge2019.core.data.di.ViewModelModule
 import droidkaigi.github.io.challenge2019.core.data.di.scope.ModuleScope
 import droidkaigi.github.io.challenge2019.ui.main.MainActivity
+import droidkaigi.github.io.challenge2019.ui.story.StoryActivity
 
 @ModuleScope
 @Component(
@@ -24,6 +25,7 @@ interface AppComponent {
     }
 
     fun inject(activity: MainActivity)
+    fun inject(activity: StoryActivity)
 }
 
 internal fun Activity.component(): AppComponent {

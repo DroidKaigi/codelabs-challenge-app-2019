@@ -12,7 +12,7 @@ data class Item(
     @Json(name = "type")
     val type: String = "",
     @Json(name = "by")
-    val author: String,
+    val author: String?,
     @Json(name = "time")
     val time: Long = 0L,
     @Json(name = "text")
