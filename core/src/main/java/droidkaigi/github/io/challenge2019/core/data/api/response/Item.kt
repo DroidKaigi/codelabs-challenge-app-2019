@@ -2,6 +2,7 @@ package droidkaigi.github.io.challenge2019.core.data.api.response
 
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
+import droidkaigi.github.io.challenge2019.core.data.model.Comment
 import droidkaigi.github.io.challenge2019.core.data.model.Story
 
 @JsonClass(generateAdapter = true)
@@ -48,5 +49,11 @@ data class Item(
         score,
         author,
         kids
+    )
+
+    fun toComment() = Comment(
+        id,
+        author,
+        text
     )
 }

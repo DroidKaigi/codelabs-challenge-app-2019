@@ -1,59 +1,49 @@
 <?xml version="1.0" encoding="utf-8"?>
-<layout
-        xmlns:android="http://schemas.android.com/apk/res/android"
-        xmlns:app="http://schemas.android.com/apk/res-auto"
-        xmlns:tools="http://schemas.android.com/tools"
->
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <data>
 
         <variable
-                name="item"
-                type="droidkaigi.github.io.challenge2019.core.data.api.response.Item"
-        />
+            name="comment"
+            type="droidkaigi.github.io.challenge2019.core.data.model.Comment" />
 
-        <import
-                type="android.text.Html"
-        />
+        <import type="android.text.Html" />
 
-        <import
-                type="android.view.View"
-        />
+        <import type="android.view.View" />
 
     </data>
 
 
     <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="8dp">
+
+        <TextView
+            android:id="@+id/author"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_margin="8dp"
-    >
+            android:text="@{comment.author}"
+            android:textAppearance="@style/TextAppearance.AppCompat.Caption"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:text="author" />
 
         <TextView
-                android:id="@+id/author"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:textAppearance="@style/TextAppearance.AppCompat.Caption"
-                android:text="@{item.author}"
-                app:layout_constraintTop_toTopOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"
-                tools:text="author"
-        />
-
-        <TextView
-                android:id="@+id/text"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:textAppearance="@style/TextAppearance.AppCompat.Body1"
-                android:text="@{item.text != null ? Html.fromHtml(item.text) : null}"
-                android:visibility="@{item.text != null ? View.VISIBLE : View.GONE}"
-                android:autoLink="all"
-                app:layout_constraintTop_toBottomOf="@id/author"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"
-                tools:text="text"
-        />
+            android:id="@+id/text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:autoLink="all"
+            android:text="@{comment.text != null ? Html.fromHtml(comment.text) : null}"
+            android:textAppearance="@style/TextAppearance.AppCompat.Body1"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/author"
+            app:visible="@{comment.text != null}"
+            tools:text="text" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </layout>

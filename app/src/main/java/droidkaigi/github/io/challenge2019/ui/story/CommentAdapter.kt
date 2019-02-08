@@ -3,11 +3,12 @@ package droidkaigi.github.io.challenge2019.ui.story
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import droidkaigi.github.io.challenge2019.core.data.api.response.Item
+import droidkaigi.github.io.challenge2019.core.data.model.Comment
 import droidkaigi.github.io.challenge2019.databinding.ItemCommentBinding
 
 
 class CommentAdapter(
-    var comments: List<Item?>
+    var comments: List<Comment?>
 ) : androidx.recyclerview.widget.RecyclerView.Adapter<CommentAdapter.ViewHolder>() {
 
     class ViewHolder(val binding: ItemCommentBinding) : androidx.recyclerview.widget.RecyclerView.ViewHolder(binding.root)
@@ -20,6 +21,6 @@ class CommentAdapter(
     override fun getItemCount(): Int = comments.size
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        holder.binding.item = comments[position]
+        holder.binding.comment = comments[position]
     }
 }

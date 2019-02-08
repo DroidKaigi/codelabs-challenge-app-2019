@@ -2,6 +2,7 @@ package droidkaigi.github.io.challenge2019.core.data.repository
 
 import droidkaigi.github.io.challenge2019.core.data.api.HackerNewsApi
 import droidkaigi.github.io.challenge2019.core.data.api.response.Item
+import droidkaigi.github.io.challenge2019.core.data.model.Comment
 import droidkaigi.github.io.challenge2019.core.data.model.Story
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -27,11 +28,11 @@ class HackerNewsDataRepository(
         }
     }
 
-    override suspend fun getComments(story: Story): List<Item> = withContext(Dispatchers.IO) {
+    override suspend fun getComments(story: Story): List<Comment> = withContext(Dispatchers.IO) {
         story.commentIds.map { id ->
             async { getItem(id) }
         }.map {
-            it.await()
+            it.await().toComment()
         }
     }
 

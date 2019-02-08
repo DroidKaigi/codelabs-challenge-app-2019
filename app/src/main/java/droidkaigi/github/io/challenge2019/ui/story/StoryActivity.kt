@@ -3,7 +3,6 @@ package droidkaigi.github.io.challenge2019.ui.story
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import android.os.PersistableBundle
 import android.view.Menu
 import android.view.MenuItem
 import android.webkit.WebResourceError
@@ -16,20 +15,17 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelProviders
 import androidx.lifecycle.observe
 import androidx.recyclerview.widget.DividerItemDecoration
-import com.squareup.moshi.Moshi
-import com.squareup.moshi.Types
 import droidkaigi.github.io.challenge2019.R
-import droidkaigi.github.io.challenge2019.core.data.api.response.Item
 import droidkaigi.github.io.challenge2019.core.data.model.Story
 import droidkaigi.github.io.challenge2019.databinding.ActivityStoryBinding
 import droidkaigi.github.io.challenge2019.di.component
+import timber.log.Timber
 import javax.inject.Inject
 
 class StoryActivity : AppCompatActivity() {
 
     companion object {
         const val READ_ARTICLE_ID = "read_article_id"
-        private const val STATE_COMMENTS = "comments"
 
         private const val EXTRA_STORY = "story"
 
@@ -46,11 +42,6 @@ class StoryActivity : AppCompatActivity() {
     }
 
     private lateinit var commentAdapter: CommentAdapter
-
-    private val moshi = Moshi.Builder().build()
-    private val itemJsonAdapter = moshi.adapter(Item::class.java)
-    private val itemsJsonAdapter =
-        moshi.adapter<List<Item?>>(Types.newParameterizedType(List::class.java, Item::class.java))
 
     private val story by lazy {
         intent.getParcelableExtra(EXTRA_STORY) as Story
@@ -70,26 +61,16 @@ class StoryActivity : AppCompatActivity() {
         commentAdapter = CommentAdapter(emptyList())
         binding.commentRecycler.adapter = commentAdapter
 
-        val savedComments = savedInstanceState?.let { bundle ->
-            bundle.getString(STATE_COMMENTS)?.let { itemsJson ->
-                itemsJsonAdapter.fromJson(itemsJson)
-            }
-        }
-
-        if (savedComments != null) {
-            commentAdapter.comments = savedComments
-            commentAdapter.notifyDataSetChanged()
-            loadUrl()
-            return
-        }
-
-        viewModel.comments.observe(this) { items ->
-            commentAdapter.comments = items
+        viewModel.comments.observe(this) { comments ->
+            Timber.w("comments.size: ${comments.size}")
+            commentAdapter.comments = comments
             commentAdapter.notifyDataSetChanged()
         }
 
         viewModel.getComments(story)
         loadUrl()
+
+        // TODO: 回転の処理はViewModel使ってるので一旦無視
     }
 
     private fun loadUrl() {
@@ -135,12 +116,5 @@ class StoryActivity : AppCompatActivity() {
             }
             else -> super.onOptionsItemSelected(item)
         }
-    }
-
-    override fun onSaveInstanceState(outState: Bundle?, outPersistentState: PersistableBundle?) {
-        outState?.apply {
-            putString(STATE_COMMENTS, itemsJsonAdapter.toJson(commentAdapter.comments))
-        }
-        super.onSaveInstanceState(outState, outPersistentState)
     }
 }
