@@ -2,7 +2,7 @@ package droidkaigi.github.io.challenge2019.presentation.story
 
 import android.view.LayoutInflater
 import android.view.ViewGroup
-import droidkaigi.github.io.challenge2019.data.api.response.Item
+import droidkaigi.github.io.challenge2019.data.model.Item
 import droidkaigi.github.io.challenge2019.databinding.ItemCommentBinding
 
 

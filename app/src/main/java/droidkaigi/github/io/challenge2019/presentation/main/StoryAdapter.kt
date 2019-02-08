@@ -3,18 +3,18 @@ package droidkaigi.github.io.challenge2019.presentation.main
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.appcompat.widget.PopupMenu
+import androidx.recyclerview.widget.RecyclerView
 import droidkaigi.github.io.challenge2019.R
-import droidkaigi.github.io.challenge2019.data.api.response.Item
+import droidkaigi.github.io.challenge2019.data.model.Article
 import droidkaigi.github.io.challenge2019.databinding.ItemFooterBinding
 import droidkaigi.github.io.challenge2019.databinding.ItemStoryBinding
 
 
 class StoryAdapter(
-    var stories: MutableList<Item?>,
-    private val onClickItem: ((Item) -> Unit)? = null,
-    private val onClickMenuItem: ((Item, Int) -> Unit)? = null,
-    var alreadyReadStories: Set<String>
-) : androidx.recyclerview.widget.RecyclerView.Adapter<androidx.recyclerview.widget.RecyclerView.ViewHolder>() {
+    var stories: MutableList<Article?>,
+    private val onClickItem: ((Article) -> Unit)? = null,
+    private val onClickMenuItem: ((Article, Int) -> Unit)? = null
+) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     enum class ViewType(val id: Int) {
         ItemStory(0),
@@ -54,13 +54,8 @@ class StoryAdapter(
             is ItemStoryViewHolder -> {
                 val item = stories[position]
                 if (item != null) {
-                    holder.binding.alreadyRead = false
-                    alreadyReadStories.forEach { id ->
-                        if (id.toLong() == item.id) {
-                            holder.binding.alreadyRead = true
-                        }
-                    }
-                    holder.binding.item = item
+                    holder.binding.alreadyRead = item.alreadyRead
+                    holder.binding.item = item.content
                     holder.binding.root.setOnClickListener {
                         onClickItem?.invoke(item)
                     }

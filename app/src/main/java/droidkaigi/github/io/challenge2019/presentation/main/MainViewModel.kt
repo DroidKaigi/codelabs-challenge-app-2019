@@ -4,45 +4,68 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import droidkaigi.github.io.challenge2019.data.api.response.Item
+import droidkaigi.github.io.challenge2019.data.model.Article
 import droidkaigi.github.io.challenge2019.data.repository.HackerNewsRepository
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import javax.inject.Inject
 import kotlin.coroutines.CoroutineContext
 
 class MainViewModel(private val repository: HackerNewsRepository) : ViewModel(), CoroutineScope {
 
-    // TODO: Errorハンドリング手抜き
+    private val _articles: MutableLiveData<List<Article>> = MutableLiveData()
+    val articles: LiveData<List<Article>> = _articles
 
-    private val _items: MutableLiveData<List<Item>> = MutableLiveData()
-    val items: LiveData<List<Item>> = _items
+    private val _article: MutableLiveData<Article> = MutableLiveData()
+    val article: LiveData<Article> = _article
 
-    private val _item: MutableLiveData<Item> = MutableLiveData()
-    val item: LiveData<Item> = _item
+    private val _loading: MutableLiveData<Boolean> = MutableLiveData()
+    val loading: LiveData<Boolean> = _loading
+
+    private val _refreshing: MutableLiveData<Boolean> = MutableLiveData()
+    val refreshing: LiveData<Boolean> = _refreshing
+
+    private val _errorEvent: MutableLiveData<Throwable> = MutableLiveData()
+    val errorEvent: LiveData<Throwable> = _errorEvent
 
     private val job = Job()
+
+    private val exceptionHandler = CoroutineExceptionHandler { _, exception ->
+        _errorEvent.value = exception
+    }
 
     override val coroutineContext: CoroutineContext
         get() = job + Dispatchers.Main
 
     init {
-        launch {
-            _items.postValue(repository.fetchTopStories())
-        }
+        onInit()
     }
 
-    fun onClickItem(id: Long) {
-        launch {
-            _item.postValue(repository.fetchById(id))
+    fun onInit() {
+        launch(exceptionHandler) {
+            _loading.postValue(true)
+            _articles.postValue(repository.fetchTopStories())
+            _loading.postValue(false)
         }
     }
 
     fun onRefresh() {
-        launch {
-            _items.postValue(repository.fetchTopStories())
+        launch(exceptionHandler) {
+            _refreshing.postValue(true)
+            _articles.postValue(repository.fetchTopStories())
+            _refreshing.postValue(false)
+        }
+    }
+
+    fun onClickItem(id: Long) {
+        launch(exceptionHandler) {
+            _article.postValue(repository.fetchById(id))
+        }
+    }
+
+    fun onReadArticle(id: Long) {
+        launch(exceptionHandler) {
+            repository.updateReadStatus(id, true)
+            _article.postValue(repository.fetchById(id))
         }
     }
 

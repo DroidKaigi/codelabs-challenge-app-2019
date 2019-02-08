@@ -1,7 +1,8 @@
-package droidkaigi.github.io.challenge2019.data.api.response
+package droidkaigi.github.io.challenge2019.data.model
 
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
+import java.io.Serializable
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -14,7 +15,7 @@ data class Item(
     @Json(name = "type")
     val type: String = "",
     @Json(name = "by")
-    val author: String,
+    val author: String? = null,
     @Json(name = "time")
     val time: Long = 0L,
     @Json(name = "text")
@@ -37,7 +38,7 @@ data class Item(
     val parts: List<Long> = emptyList(),
     @Json(name = "descendants")
     val descendants: Int = 0
-) {
+) : Serializable {
     companion object {
         const val NO_ID = -1L
 

@@ -1,10 +1,10 @@
 package droidkaigi.github.io.challenge2019.presentation.story
 
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.view.MenuItem
-import android.view.View
 import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
@@ -13,7 +13,6 @@ import android.widget.ProgressBar
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
 import androidx.recyclerview.widget.RecyclerView
-import com.squareup.moshi.Types
 import dagger.Binds
 import dagger.android.ActivityKey
 import dagger.android.AndroidInjection
@@ -22,7 +21,7 @@ import dagger.multibindings.IntoMap
 import droidkaigi.github.io.challenge2019.BaseActivity
 import droidkaigi.github.io.challenge2019.R
 import droidkaigi.github.io.challenge2019.Util
-import droidkaigi.github.io.challenge2019.data.api.response.Item
+import droidkaigi.github.io.challenge2019.data.model.Item
 import droidkaigi.github.io.challenge2019.presentation.di.ActivityModule
 import droidkaigi.github.io.challenge2019.presentation.di.ActivityScope
 import droidkaigi.github.io.challenge2019.presentation.di.StoryActivityModule
@@ -33,7 +32,11 @@ class StoryActivity : BaseActivity() {
     companion object {
         const val EXTRA_ITEM_JSON = "droidkaigi.github.io.challenge2019.EXTRA_ITEM_JSON"
         const val READ_ARTICLE_ID = "read_article_id"
-        private const val STATE_COMMENTS = "comments"
+
+        fun createIntent(context: Context, item: Item) =
+            Intent(context, StoryActivity::class.java).apply {
+                putExtra(StoryActivity.EXTRA_ITEM_JSON, item)
+            }
     }
 
     @Inject
@@ -47,14 +50,8 @@ class StoryActivity : BaseActivity() {
 
     private lateinit var commentAdapter: CommentAdapter
 
-    private val itemJsonAdapter = moshi.adapter(Item::class.java)
-    private val itemsJsonAdapter =
-        moshi.adapter<List<Item?>>(Types.newParameterizedType(List::class.java, Item::class.java))
-
     private val item: Item?
-        get() = intent.getStringExtra(EXTRA_ITEM_JSON)?.let {
-            itemJsonAdapter.fromJson(it)
-        }
+        get() = intent.getSerializableExtra(EXTRA_ITEM_JSON) as Item
 
     override fun getContentView(): Int {
         return R.layout.activity_story
@@ -81,23 +78,10 @@ class StoryActivity : BaseActivity() {
 
         if (item == null) return
 
-        val savedComments = savedInstanceState?.let { bundle ->
-            bundle.getString(STATE_COMMENTS)?.let { itemsJson ->
-                itemsJsonAdapter.fromJson(itemsJson)
-            }
-        }
-
-        if (savedComments != null) {
-            commentAdapter.comments = savedComments
+        viewModel.comments.observe(this, Observer {
+            commentAdapter.comments = it.map { article -> article.content }
             commentAdapter.notifyDataSetChanged()
             webView.loadUrl(item!!.url)
-            return
-        }
-
-        progressView.visibility = View.VISIBLE
-        viewModel.comments.observe(this, Observer {
-            commentAdapter.comments = it
-            commentAdapter.notifyDataSetChanged()
         })
         viewModel.commentLoading.observe(this, Observer {
             setProgressVisibility()
@@ -141,19 +125,13 @@ class StoryActivity : BaseActivity() {
                 val intent = Intent().apply {
                     putExtra(READ_ARTICLE_ID, this@StoryActivity.item?.id)
                 }
+                // TODO: backでも同じことする
                 setResult(Activity.RESULT_OK, intent)
                 finish()
                 return true
             }
             else -> super.onOptionsItemSelected(item)
         }
-    }
-
-    override fun onSaveInstanceState(outState: Bundle) {
-        outState.apply {
-            putString(STATE_COMMENTS, itemsJsonAdapter.toJson(commentAdapter.comments))
-        }
-        super.onSaveInstanceState(outState)
     }
 
     @ActivityScope
