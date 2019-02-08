@@ -4,8 +4,8 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import droidkaigi.github.io.challenge2019.data.model.Article
-import droidkaigi.github.io.challenge2019.data.model.Item
+import droidkaigi.github.io.challenge2019.data.model.Comment
+import droidkaigi.github.io.challenge2019.data.model.Story
 import droidkaigi.github.io.challenge2019.data.repository.HackerNewsRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -15,12 +15,12 @@ import kotlin.coroutines.CoroutineContext
 
 class StoryViewModel(
     private val repository: HackerNewsRepository,
-    private val story: Item
+    private val story: Story
 ) : ViewModel(), CoroutineScope {
 
     // TODO: Errorハンドリング手抜き
-    private val _comments: MutableLiveData<List<Article>> = MutableLiveData()
-    val comments: LiveData<List<Article>> = _comments
+    private val _comments: MutableLiveData<List<Comment>> = MutableLiveData()
+    val comments: LiveData<List<Comment>> = _comments
 
     private val _commentLoading: MutableLiveData<Boolean> = MutableLiveData()
     val commentLoading: LiveData<Boolean> = _commentLoading
@@ -35,7 +35,7 @@ class StoryViewModel(
     init {
         launch {
             _commentLoading.postValue(true)
-            _comments.postValue(repository.fetchByIds(story.kids))
+            _comments.postValue(repository.fetchCommentsByIds(story.commentIds))
         }.invokeOnCompletion {
             _commentLoading.postValue(false)
         }
@@ -48,7 +48,7 @@ class StoryViewModel(
 
     class Factory(
         private val repository: HackerNewsRepository,
-        private val story: Item
+        private val story: Story
     ) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T = StoryViewModel(repository, story) as T

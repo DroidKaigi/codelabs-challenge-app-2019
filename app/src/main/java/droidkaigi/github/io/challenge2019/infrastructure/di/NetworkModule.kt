@@ -43,7 +43,7 @@ open class NetworkModule {
 
     @Singleton
     @Provides
-    fun provideRegliApi(retrofit: Retrofit): HackerNewsApi = retrofit.create(HackerNewsApi::class.java)
+    fun provideHackerNewsApi(retrofit: Retrofit): HackerNewsApi = retrofit.create(HackerNewsApi::class.java)
 
     companion object {
         private const val BASE_URL = "https://hacker-news.firebaseio.com/v0/"

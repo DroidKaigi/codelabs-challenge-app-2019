@@ -1,4 +1,4 @@
-package droidkaigi.github.io.challenge2019.data.model
+package droidkaigi.github.io.challenge2019.infrastructure.network
 
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
@@ -7,7 +7,7 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 @JsonClass(generateAdapter = true)
-data class Item(
+data class ItemResponse(
     @Json(name = "id")
     val id: Long = NO_ID,
     @Json(name = "deleted")

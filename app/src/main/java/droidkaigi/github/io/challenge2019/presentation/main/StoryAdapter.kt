@@ -5,15 +5,15 @@ import android.view.ViewGroup
 import androidx.appcompat.widget.PopupMenu
 import androidx.recyclerview.widget.RecyclerView
 import droidkaigi.github.io.challenge2019.R
-import droidkaigi.github.io.challenge2019.data.model.Article
+import droidkaigi.github.io.challenge2019.data.model.Story
 import droidkaigi.github.io.challenge2019.databinding.ItemFooterBinding
 import droidkaigi.github.io.challenge2019.databinding.ItemStoryBinding
 
 
 class StoryAdapter(
-    var stories: MutableList<Article?>,
-    private val onClickItem: ((Article) -> Unit)? = null,
-    private val onClickMenuItem: ((Article, Int) -> Unit)? = null
+    var stories: MutableList<Story?>,
+    private val onClickItem: ((Story) -> Unit)? = null,
+    private val onClickMenuItem: ((Story, Int) -> Unit)? = null
 ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     enum class ViewType(val id: Int) {
@@ -55,7 +55,7 @@ class StoryAdapter(
                 val item = stories[position]
                 if (item != null) {
                     holder.binding.alreadyRead = item.alreadyRead
-                    holder.binding.item = item.content
+                    holder.binding.story = item
                     holder.binding.root.setOnClickListener {
                         onClickItem?.invoke(item)
                     }
@@ -76,7 +76,7 @@ class StoryAdapter(
                         popupMenu.show()
                     }
                 } else {
-                    holder.binding.item = null
+                    holder.binding.story = null
                     holder.binding.root.setOnClickListener(null)
                     holder.binding.menuButton.setOnClickListener(null)
                 }

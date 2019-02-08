@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.view.Menu
 import android.view.MenuItem
 import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
@@ -15,27 +16,25 @@ import androidx.lifecycle.ViewModelProviders
 import androidx.recyclerview.widget.RecyclerView
 import dagger.Binds
 import dagger.android.ActivityKey
-import dagger.android.AndroidInjection
 import dagger.android.AndroidInjector
+import dagger.android.support.DaggerAppCompatActivity
 import dagger.multibindings.IntoMap
-import droidkaigi.github.io.challenge2019.BaseActivity
 import droidkaigi.github.io.challenge2019.R
-import droidkaigi.github.io.challenge2019.Util
-import droidkaigi.github.io.challenge2019.data.model.Item
+import droidkaigi.github.io.challenge2019.data.model.Story
 import droidkaigi.github.io.challenge2019.presentation.di.ActivityModule
 import droidkaigi.github.io.challenge2019.presentation.di.ActivityScope
 import droidkaigi.github.io.challenge2019.presentation.di.StoryActivityModule
 import javax.inject.Inject
 
-class StoryActivity : BaseActivity() {
+class StoryActivity : DaggerAppCompatActivity() {
 
     companion object {
         const val EXTRA_ITEM_JSON = "droidkaigi.github.io.challenge2019.EXTRA_ITEM_JSON"
         const val READ_ARTICLE_ID = "read_article_id"
 
-        fun createIntent(context: Context, item: Item) =
+        fun createIntent(context: Context, story: Story) =
             Intent(context, StoryActivity::class.java).apply {
-                putExtra(StoryActivity.EXTRA_ITEM_JSON, item)
+                putExtra(StoryActivity.EXTRA_ITEM_JSON, story)
             }
     }
 
@@ -50,16 +49,12 @@ class StoryActivity : BaseActivity() {
 
     private lateinit var commentAdapter: CommentAdapter
 
-    private val item: Item?
-        get() = intent.getSerializableExtra(EXTRA_ITEM_JSON) as Item
-
-    override fun getContentView(): Int {
-        return R.layout.activity_story
-    }
+    private val item: Story?
+        get() = intent.getSerializableExtra(EXTRA_ITEM_JSON) as Story
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        AndroidInjection.inject(this)
         super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_story)
 
         viewModel = ViewModelProviders.of(this, viewModelFactory).get(StoryViewModel::class.java)
 
@@ -79,7 +74,7 @@ class StoryActivity : BaseActivity() {
         if (item == null) return
 
         viewModel.comments.observe(this, Observer {
-            commentAdapter.comments = it.map { article -> article.content }
+            commentAdapter.comments = it
             commentAdapter.notifyDataSetChanged()
             webView.loadUrl(item!!.url)
         })
@@ -93,9 +88,38 @@ class StoryActivity : BaseActivity() {
         loadUrl()
     }
 
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.activity_menu, menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem?): Boolean {
+        return when (item?.itemId) {
+            R.id.refresh -> {
+//                progressView.visibility = Util.setVisibility(true)
+                loadUrl()
+                return true
+            }
+            android.R.id.home -> {
+                val intent = Intent().apply {
+                    putExtra(READ_ARTICLE_ID, this@StoryActivity.item?.id)
+                }
+                // TODO: backでも同じことする
+                setResult(Activity.RESULT_OK, intent)
+                finish()
+                return true
+            }
+            R.id.exit -> {
+                this.finish()
+                return true
+            }
+            else -> super.onOptionsItemSelected(item)
+        }
+    }
+
     private fun setProgressVisibility() {
         val loading = viewModel.commentLoading.value == true || viewModel.webViewLoading.value == true
-        progressView.visibility = Util.setVisibility(loading)
+//        progressView.visibility = Util.setVisibility(loading)
     }
 
     private fun loadUrl() {
@@ -112,26 +136,6 @@ class StoryActivity : BaseActivity() {
             }
         }
         webView.loadUrl(item!!.url)
-    }
-
-    override fun onOptionsItemSelected(item: MenuItem?): Boolean {
-        return when (item?.itemId) {
-            R.id.refresh -> {
-                progressView.visibility = Util.setVisibility(true)
-                loadUrl()
-                return true
-            }
-            android.R.id.home -> {
-                val intent = Intent().apply {
-                    putExtra(READ_ARTICLE_ID, this@StoryActivity.item?.id)
-                }
-                // TODO: backでも同じことする
-                setResult(Activity.RESULT_OK, intent)
-                finish()
-                return true
-            }
-            else -> super.onOptionsItemSelected(item)
-        }
     }
 
     @ActivityScope

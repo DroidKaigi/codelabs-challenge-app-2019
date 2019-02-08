@@ -1,10 +1,10 @@
-package droidkaigi.github.io.challenge2019.data.api.response
+package droidkaigi.github.io.challenge2019.infrastructure.network
 
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
 
 @JsonClass(generateAdapter = true)
-data class User(
+data class UserResponse(
     @Json(name = "id")
     val id: String,
     @Json(name = "delay")
