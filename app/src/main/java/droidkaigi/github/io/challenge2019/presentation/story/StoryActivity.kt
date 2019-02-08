@@ -10,10 +10,10 @@ import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
-import android.widget.ProgressBar
+import androidx.databinding.DataBindingUtil
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
-import androidx.recyclerview.widget.RecyclerView
+import androidx.recyclerview.widget.DividerItemDecoration
 import dagger.Binds
 import dagger.android.ActivityKey
 import dagger.android.AndroidInjector
@@ -21,6 +21,8 @@ import dagger.android.support.DaggerAppCompatActivity
 import dagger.multibindings.IntoMap
 import droidkaigi.github.io.challenge2019.R
 import droidkaigi.github.io.challenge2019.data.model.Story
+import droidkaigi.github.io.challenge2019.databinding.ActivityStoryBinding
+import droidkaigi.github.io.challenge2019.ext.showError
 import droidkaigi.github.io.challenge2019.presentation.di.ActivityModule
 import droidkaigi.github.io.challenge2019.presentation.di.ActivityScope
 import droidkaigi.github.io.challenge2019.presentation.di.StoryActivityModule
@@ -43,9 +45,7 @@ class StoryActivity : DaggerAppCompatActivity() {
 
     private lateinit var viewModel: StoryViewModel
 
-    private lateinit var webView: WebView
-    private lateinit var recyclerView: RecyclerView
-    private lateinit var progressView: ProgressBar
+    private lateinit var binding: ActivityStoryBinding
 
     private lateinit var commentAdapter: CommentAdapter
 
@@ -54,36 +54,21 @@ class StoryActivity : DaggerAppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_story)
-
         viewModel = ViewModelProviders.of(this, viewModelFactory).get(StoryViewModel::class.java)
-
-        webView = findViewById(R.id.web_view)
-        recyclerView = findViewById(R.id.comment_recycler)
-        progressView = findViewById(R.id.progress)
-
-        recyclerView.isNestedScrollingEnabled = false
-        val itemDecoration = androidx.recyclerview.widget.DividerItemDecoration(
-            recyclerView.context,
-            androidx.recyclerview.widget.DividerItemDecoration.VERTICAL
-        )
-        recyclerView.addItemDecoration(itemDecoration)
-        commentAdapter = CommentAdapter(emptyList())
-        recyclerView.adapter = commentAdapter
-
-        if (item == null) return
-
         viewModel.comments.observe(this, Observer {
             commentAdapter.comments = it
             commentAdapter.notifyDataSetChanged()
-            webView.loadUrl(item!!.url)
         })
-        viewModel.commentLoading.observe(this, Observer {
-            setProgressVisibility()
+        viewModel.errorEvent.observe(this, Observer {
+            showError(it)
         })
-        viewModel.webViewLoading.observe(this, Observer {
-            setProgressVisibility()
-        })
+
+        binding = DataBindingUtil.setContentView<ActivityStoryBinding>(this, R.layout.activity_story).apply {
+            viewModel = this@StoryActivity.viewModel
+            lifecycleOwner = this@StoryActivity
+        }
+
+        setUpRecyclerView()
 
         loadUrl()
     }
@@ -96,7 +81,7 @@ class StoryActivity : DaggerAppCompatActivity() {
     override fun onOptionsItemSelected(item: MenuItem?): Boolean {
         return when (item?.itemId) {
             R.id.refresh -> {
-//                progressView.visibility = Util.setVisibility(true)
+                viewModel.onInit()
                 loadUrl()
                 return true
             }
@@ -104,7 +89,6 @@ class StoryActivity : DaggerAppCompatActivity() {
                 val intent = Intent().apply {
                     putExtra(READ_ARTICLE_ID, this@StoryActivity.item?.id)
                 }
-                // TODO: backでも同じことする
                 setResult(Activity.RESULT_OK, intent)
                 finish()
                 return true
@@ -117,16 +101,20 @@ class StoryActivity : DaggerAppCompatActivity() {
         }
     }
 
-    private fun setProgressVisibility() {
-        val loading = viewModel.commentLoading.value == true || viewModel.webViewLoading.value == true
-//        progressView.visibility = Util.setVisibility(loading)
+    private fun setUpRecyclerView() {
+        binding.commentRecycler.isNestedScrollingEnabled = false
+        val itemDecoration = DividerItemDecoration(
+            binding.commentRecycler.context,
+            DividerItemDecoration.VERTICAL
+        )
+        binding.commentRecycler.addItemDecoration(itemDecoration)
+        commentAdapter = CommentAdapter(emptyList())
+        binding.commentRecycler.adapter = commentAdapter
     }
 
     private fun loadUrl() {
-        if (item == null) return
-
         viewModel.webViewLoading.value = true
-        webView.webViewClient = object : WebViewClient() {
+        binding.webView.webViewClient = object : WebViewClient() {
             override fun onPageFinished(view: WebView?, url: String?) {
                 viewModel.webViewLoading.value = false
             }
@@ -135,7 +123,7 @@ class StoryActivity : DaggerAppCompatActivity() {
                 viewModel.webViewLoading.value = false
             }
         }
-        webView.loadUrl(item!!.url)
+        binding.webView.loadUrl(item!!.url)
     }
 
     @ActivityScope

@@ -25,6 +25,7 @@ class MainViewModel(private val repository: HackerNewsRepository) : ViewModel(),
     private val _refreshing: MutableLiveData<Boolean> = MutableLiveData()
     val refreshing: LiveData<Boolean> = _refreshing
 
+    // TODO: Errorハンドリング手抜き
     private val _errorEvent: MutableLiveData<Throwable> = MutableLiveData()
     val errorEvent: LiveData<Throwable> = _errorEvent
 
@@ -45,6 +46,7 @@ class MainViewModel(private val repository: HackerNewsRepository) : ViewModel(),
         launch(exceptionHandler) {
             _loading.postValue(true)
             _stories.postValue(repository.fetchTopStories())
+        }.invokeOnCompletion {
             _loading.postValue(false)
         }
     }
@@ -53,6 +55,7 @@ class MainViewModel(private val repository: HackerNewsRepository) : ViewModel(),
         launch(exceptionHandler) {
             _refreshing.postValue(true)
             _stories.postValue(repository.fetchTopStories())
+        }.invokeOnCompletion {
             _refreshing.postValue(false)
         }
     }

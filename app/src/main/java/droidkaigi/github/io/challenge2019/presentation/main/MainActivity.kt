@@ -36,6 +36,7 @@ class MainActivity : DaggerAppCompatActivity() {
     @Inject
     lateinit var viewModelFactory: MainViewModel.Factory
 
+    // TODO: このAnalyticsっぽいやつの扱い未定
     @Inject
     lateinit var ingestManager: IngestManager
 
