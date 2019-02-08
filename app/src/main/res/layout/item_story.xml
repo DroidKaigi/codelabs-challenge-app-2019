@@ -8,8 +8,8 @@
     <data>
 
         <variable
-                name="item"
-                type="droidkaigi.github.io.challenge2019.data.model.Item"
+                name="story"
+                type="droidkaigi.github.io.challenge2019.data.model.Story"
         />
 
         <variable
@@ -31,7 +31,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:textAppearance="@style/TextAppearance.AppCompat.Title"
-                android:text="@{item.title}"
+                android:text="@{story.title}"
                 app:layout_constraintTop_toTopOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toStartOf="@id/menu_button"
@@ -55,7 +55,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:textAppearance="@style/TextAppearance.AppCompat.Caption"
-                android:text="@{item.timeText}"
+                android:text="@{story.timeText}"
                 app:layout_constraintTop_toBottomOf="@id/title"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
@@ -67,7 +67,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:textAppearance="@style/TextAppearance.AppCompat.Caption"
-                android:text="@{item.url}"
+                android:text="@{story.url}"
                 app:layout_constraintTop_toBottomOf="@id/time"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
@@ -79,7 +79,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:textAppearance="@style/TextAppearance.AppCompat.Caption"
-                android:text="@{item.score + ` points by ` + item.author}"
+                android:text="@{story.score + ` points by ` + story.author}"
                 app:layout_constraintTop_toBottomOf="@id/url"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintStart_toStartOf="parent"

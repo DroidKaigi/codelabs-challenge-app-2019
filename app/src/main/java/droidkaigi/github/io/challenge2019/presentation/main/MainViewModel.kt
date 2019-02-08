@@ -4,7 +4,8 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import droidkaigi.github.io.challenge2019.data.model.Article
+import droidkaigi.github.io.challenge2019.data.model.Story
+import droidkaigi.github.io.challenge2019.data.model.StoryId
 import droidkaigi.github.io.challenge2019.data.repository.HackerNewsRepository
 import kotlinx.coroutines.*
 import javax.inject.Inject
@@ -12,11 +13,11 @@ import kotlin.coroutines.CoroutineContext
 
 class MainViewModel(private val repository: HackerNewsRepository) : ViewModel(), CoroutineScope {
 
-    private val _articles: MutableLiveData<List<Article>> = MutableLiveData()
-    val articles: LiveData<List<Article>> = _articles
+    private val _stories: MutableLiveData<List<Story>> = MutableLiveData()
+    val stories: LiveData<List<Story>> = _stories
 
-    private val _article: MutableLiveData<Article> = MutableLiveData()
-    val article: LiveData<Article> = _article
+    private val _story: MutableLiveData<Story> = MutableLiveData()
+    val story: LiveData<Story> = _story
 
     private val _loading: MutableLiveData<Boolean> = MutableLiveData()
     val loading: LiveData<Boolean> = _loading
@@ -43,7 +44,7 @@ class MainViewModel(private val repository: HackerNewsRepository) : ViewModel(),
     fun onInit() {
         launch(exceptionHandler) {
             _loading.postValue(true)
-            _articles.postValue(repository.fetchTopStories())
+            _stories.postValue(repository.fetchTopStories())
             _loading.postValue(false)
         }
     }
@@ -51,21 +52,21 @@ class MainViewModel(private val repository: HackerNewsRepository) : ViewModel(),
     fun onRefresh() {
         launch(exceptionHandler) {
             _refreshing.postValue(true)
-            _articles.postValue(repository.fetchTopStories())
+            _stories.postValue(repository.fetchTopStories())
             _refreshing.postValue(false)
         }
     }
 
-    fun onClickItem(id: Long) {
+    fun onClickItem(id: StoryId) {
         launch(exceptionHandler) {
-            _article.postValue(repository.fetchById(id))
+            _story.postValue(repository.fetchStoryById(id))
         }
     }
 
-    fun onReadArticle(id: Long) {
+    fun onReadStory(id: StoryId) {
         launch(exceptionHandler) {
             repository.updateReadStatus(id, true)
-            _article.postValue(repository.fetchById(id))
+            _story.postValue(repository.fetchStoryById(id))
         }
     }
 

@@ -15,6 +15,7 @@ import dagger.android.AndroidInjector
 import dagger.android.support.DaggerAppCompatActivity
 import dagger.multibindings.IntoMap
 import droidkaigi.github.io.challenge2019.R
+import droidkaigi.github.io.challenge2019.data.model.StoryId
 import droidkaigi.github.io.challenge2019.databinding.ActivityMainBinding
 import droidkaigi.github.io.challenge2019.ext.copyToClipboard
 import droidkaigi.github.io.challenge2019.ext.showError
@@ -48,11 +49,11 @@ class MainActivity : DaggerAppCompatActivity() {
         super.onCreate(savedInstanceState)
         viewModel = ViewModelProviders.of(this, viewModelFactory).get(MainViewModel::class.java)
 
-        viewModel.articles.observe(this, Observer {
+        viewModel.stories.observe(this, Observer {
             storyAdapter.stories = it.toMutableList()
             storyAdapter.notifyDataSetChanged()
         })
-        viewModel.article.observe(this, Observer {
+        viewModel.story.observe(this, Observer {
             val index = storyAdapter.stories.indexOfFirst { item -> item?.id == it.id }
             if (index == -1) {
                 return@Observer
@@ -93,9 +94,10 @@ class MainActivity : DaggerAppCompatActivity() {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         when (resultCode) {
             Activity.RESULT_OK -> {
-                data?.getLongExtra(StoryActivity.READ_ARTICLE_ID, 0L)?.let { id ->
-                    if (id != 0L) {
-                        viewModel.onReadArticle(id)
+                data?.getSerializableExtra(StoryActivity.READ_ARTICLE_ID)?.let { id ->
+                    val storyId = id as StoryId
+                    if (storyId.v != -1L) {
+                        viewModel.onReadStory(storyId)
                     }
                 }
             }
@@ -113,7 +115,7 @@ class MainActivity : DaggerAppCompatActivity() {
             stories = mutableListOf(),
             onClickItem = { item ->
                 startActivityForResult(
-                    StoryActivity.createIntent(this@MainActivity, item.content),
+                    StoryActivity.createIntent(this@MainActivity, item),
                     ACTIVITY_REQUEST
                 )
 
@@ -122,7 +124,7 @@ class MainActivity : DaggerAppCompatActivity() {
                 when (menuItemId) {
                     R.id.copy_url -> {
                         track()
-                        copyToClipboard("url", item.content.url)
+                        copyToClipboard("url", item.url)
                     }
                     R.id.refresh -> {
                         viewModel.onClickItem(item.id)

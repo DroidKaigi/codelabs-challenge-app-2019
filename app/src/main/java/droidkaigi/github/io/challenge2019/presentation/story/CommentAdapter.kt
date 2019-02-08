@@ -2,12 +2,12 @@ package droidkaigi.github.io.challenge2019.presentation.story
 
 import android.view.LayoutInflater
 import android.view.ViewGroup
-import droidkaigi.github.io.challenge2019.data.model.Item
+import droidkaigi.github.io.challenge2019.data.model.Comment
 import droidkaigi.github.io.challenge2019.databinding.ItemCommentBinding
 
 
 class CommentAdapter(
-    var comments: List<Item?>
+    var comments: List<Comment?>
 ) : androidx.recyclerview.widget.RecyclerView.Adapter<CommentAdapter.ViewHolder>() {
 
     class ViewHolder(val binding: ItemCommentBinding) :
