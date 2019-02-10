@@ -16,15 +16,15 @@ enum class EntryType {
 data class Entry(
     val id: EntryId,
     val type: EntryType,
-    val by: String,
     val time: Date,
-    val htmlText: String,
+    val author: String,
+    val htmlText: String? = null,
     val parent: EntryId? = null,
     val poll: EntryId? = null,
     val kids: List<EntryId> = emptyList(),
-    val url: URL,
+    val url: URL? = null,
     val score: Int,
     val title: String,
     val parts: List<EntryId> = emptyList(),
-    val descendants: Int? = null
+    val descendants: Int
 )
