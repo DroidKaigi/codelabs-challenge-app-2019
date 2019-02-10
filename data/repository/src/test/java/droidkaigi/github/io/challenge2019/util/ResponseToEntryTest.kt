@@ -5,7 +5,7 @@ package droidkaigi.github.io.challenge2019.util
 import com.squareup.moshi.JsonAdapter
 import com.squareup.moshi.Moshi
 import droidkaigi.github.io.challenge2019.data.api.response.ItemResponse
-import droidkaigi.github.io.challenge2019.domain.hackernews.EntryType
+import droidkaigi.github.io.challenge2019.domain.hackernews.*
 import org.junit.Before
 import java.net.URL
 import kotlin.test.Test
@@ -36,14 +36,10 @@ class ResponseToEntryTest {
   "url" : "http://www.getdropbox.com/u/2/screencast.html"
 }
         """.trimIndent()
-        val entry = jsonAdapter.fromJson(json)!!.toEntry()
+        val entry = jsonAdapter.fromJson(json)!!.toEntry() as Story
         assertEquals(entry.id.id, 8863)
-        assertEquals(entry.author, "dhouston")
-        assertEquals(entry.type, EntryType.STORY)
+        assertEquals(entry.by, "dhouston")
         assertEquals(entry.time.time, 1175714200 * 1000L)
-        assertEquals(entry.htmlText, null)
-        assertEquals(entry.parent, null)
-        assertEquals(entry.poll, null)
         assertEquals(entry.url, URL("http://www.getdropbox.com/u/2/screencast.html"))
         assertEquals(entry.score, 111)
         assertEquals(entry.title, "My YC app: Dropbox - Throw away your USB drive")
@@ -88,6 +84,35 @@ class ResponseToEntryTest {
     }
 
     @Test
+    fun `Comment のエンコード`() {
+        val json = """
+{
+  "by" : "norvig",
+  "id" : 2921983,
+  "kids" : [ 2922097, 2922429, 2924562, 2922709, 2922573, 2922140, 2922141 ],
+  "parent" : 2921506,
+  "text" : "Aw shucks, guys ... you make me blush with your compliments.<p>Tell you what, Ill make a deal: I'll keep writing if you keep reading. K?",
+  "time" : 1314211127,
+  "type" : "comment"
+}
+        """.trimIndent()
+        val entry = jsonAdapter.fromJson(json)!!.toEntry() as Comment
+        assertEquals(entry.by, "norvig")
+        assertEquals(entry.id.id, 2921983)
+        assertEquals(
+            entry.kids.map { it.id }, listOf<Long>(
+                2922097, 2922429, 2924562, 2922709, 2922573, 2922140, 2922141
+            )
+        )
+        assertEquals(entry.parent.id, 2921506)
+        assertEquals(
+            entry.htmlText,
+            "Aw shucks, guys ... you make me blush with your compliments.<p>Tell you what, Ill make a deal: I'll keep writing if you keep reading. K?"
+        )
+        assertEquals(entry.time.time, 1314211127 * 1000L)
+    }
+
+    @Test
     fun `Ask のエンコード`() {
         val json = """
 {
@@ -103,9 +128,8 @@ class ResponseToEntryTest {
   "url" : ""
 }
         """.trimIndent()
-        val entry = jsonAdapter.fromJson(json)!!.toEntry()
+        val entry = jsonAdapter.fromJson(json)!!.toEntry() as Ask
         assertEquals(entry.id.id, 121003)
-        assertEquals(entry.descendants, 16)
         assertEquals(
             entry.kids.map { it.id }, listOf<Long>(
                 121016, 121109, 121168
@@ -118,9 +142,7 @@ class ResponseToEntryTest {
         )
         assertEquals(entry.time.time, 1203647620 * 1000L)
         assertEquals(entry.title, "Ask HN: The Arc Effect")
-        assertEquals(entry.type, EntryType.STORY)
-        assertEquals(entry.url, null)
-        assertEquals(entry.author, "tel")
+        assertEquals(entry.by, "tel")
     }
 
     @Test
@@ -137,8 +159,8 @@ class ResponseToEntryTest {
   "url" : ""
 }
         """.trimIndent()
-        val entry = jsonAdapter.fromJson(json)!!.toEntry()
-        assertEquals(entry.author, "justin")
+        val entry = jsonAdapter.fromJson(json)!!.toEntry() as Job
+        assertEquals(entry.by, "justin")
         assertEquals(entry.id.id, 192327)
         assertEquals(entry.score, 6)
         assertEquals(
@@ -147,12 +169,70 @@ class ResponseToEntryTest {
         )
         assertEquals(entry.time.time, 1210981217 * 1000L)
         assertEquals(entry.title, "Justin.tv is looking for a Lead Flash Engineer!")
-        assertEquals(entry.type, EntryType.JOB)
-        assertEquals(entry.url, null)
     }
 
     @Test
     fun `Poll のエンコード`() {
+        val json = """
+{
+  "by" : "pg",
+  "descendants" : 54,
+  "id" : 126809,
+  "kids" : [ 126822, 126823, 126993, 126824, 126934, 127411, 126888, 127681, 126818, 126816, 126854, 127095, 126861, 127313, 127299, 126859, 126852, 126882, 126832, 127072, 127217, 126889, 127535, 126917, 126875 ],
+  "parts" : [ 126810, 126811, 126812 ],
+  "score" : 46,
+  "text" : "",
+  "time" : 1204403652,
+  "title" : "Poll: What would happen if News.YC had explicit support for polls?",
+  "type" : "poll"
+}
+        """.trimIndent()
+        val entry = jsonAdapter.fromJson(json)!!.toEntry() as Poll
+        assertEquals(entry.by, "pg")
+        assertEquals(entry.descendants, 54)
+        assertEquals(entry.id.id, 126809)
+        assertEquals(
+            entry.kids.map { it.id }, listOf<Long>(
+                126822,
+                126823,
+                126993,
+                126824,
+                126934,
+                127411,
+                126888,
+                127681,
+                126818,
+                126816,
+                126854,
+                127095,
+                126861,
+                127313,
+                127299,
+                126859,
+                126852,
+                126882,
+                126832,
+                127072,
+                127217,
+                126889,
+                127535,
+                126917,
+                126875
+            )
+        )
+        assertEquals(
+            entry.parts.map { it.id }, listOf<Long>(
+                126810, 126811, 126812
+            )
+        )
+        assertEquals(entry.score, 46)
+        assertEquals(entry.htmlText, null)
+        assertEquals(entry.time.time, 1204403652 * 1000L)
+        assertEquals(entry.title, "Poll: What would happen if News.YC had explicit support for polls?")
+    }
+
+    @Test
+    fun `Pollopt のエンコード`() {
         val json = """
 {
   "by" : "pg",
@@ -164,13 +244,12 @@ class ResponseToEntryTest {
   "type" : "pollopt"
 }
         """.trimIndent()
-        val entry = jsonAdapter.fromJson(json)!!.toEntry()
-        assertEquals(entry.author, "pg")
+        val entry = jsonAdapter.fromJson(json)!!.toEntry() as Pollopt
+        assertEquals(entry.by, "pg")
         assertEquals(entry.id.id, 160705)
-        assertEquals(entry.poll?.id, 160704)
+        assertEquals(entry.poll.id, 160704)
         assertEquals(entry.score, 335)
         assertEquals(entry.htmlText, "Yes, ban them; I'm tired of seeing Valleywag stories on News.YC.")
         assertEquals(entry.time.time, 1207886576 * 1000L)
-        assertEquals(entry.type, EntryType.POLLOPT)
     }
 }
