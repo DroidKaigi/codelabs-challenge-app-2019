@@ -3,27 +3,22 @@
 package droidkaigi.github.io.challenge2019.repository
 
 import android.arch.core.executor.testing.InstantTaskExecutorRule
-import android.arch.lifecycle.Observer
 import com.squareup.moshi.JsonAdapter
 import com.squareup.moshi.Moshi
 import droidkaigi.github.io.challenge2019.data.api.HackerNewsApi
 import droidkaigi.github.io.challenge2019.data.api.response.ItemResponse
-import droidkaigi.github.io.challenge2019.domain.hackernews.Entry
 import droidkaigi.github.io.challenge2019.domain.hackernews.Story
 import droidkaigi.github.io.challenge2019.util.toEntry
-import io.mockk.confirmVerified
-import io.mockk.spyk
-import io.mockk.verifySequence
 import kotlinx.coroutines.runBlocking
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import org.junit.Rule
 import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
-import java.util.concurrent.TimeUnit
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
+import kotlin.test.assertEquals
 
 class EntryRepositoryTest {
 
@@ -83,22 +78,16 @@ class EntryRepositoryTest {
         val api = retrofit.create(HackerNewsApi::class.java)
         val repository = EntryRepositoryImpl(api)
         val response = repository.loadTopStories()
-        val observer = spyk(Observer<Resource<List<Story>>> {
-        })
         val story = jsonAdapter.fromJson(json)!!.toEntry() as Story
-        response.observeForever(observer)
-        verifySequence {
-            observer.onChanged(
-                Success(
-                    listOf(
-                        story,
-                        story,
-                        story,
-                        story
-                    )
+        assertEquals(
+            response, Success(
+                listOf(
+                    story,
+                    story,
+                    story,
+                    story
                 )
             )
-        }
-        confirmVerified(observer)
+        )
     }
 }

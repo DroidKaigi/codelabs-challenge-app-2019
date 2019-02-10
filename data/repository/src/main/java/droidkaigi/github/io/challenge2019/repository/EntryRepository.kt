@@ -10,19 +10,16 @@ import kotlinx.coroutines.*
 
 interface EntryRepository {
 
-    suspend fun loadTopStories(): LiveData<Resource<List<Story>>>
+    suspend fun loadTopStories(): Resource<List<Story>>
 
-    suspend fun getStory(id: EntryId): LiveData<Resource<Story>>
+    suspend fun getStory(id: EntryId): Resource<Story>
 
 }
 
 class EntryRepositoryImpl(
     val api: HackerNewsApi
 ) : EntryRepository {
-    override suspend fun loadTopStories(): LiveData<Resource<List<Story>>> = coroutineScope {
-        val liveData = MutableLiveData<Resource<List<Story>>>().also {
-            it.postValue(Loading())
-        }
+    override suspend fun loadTopStories(): Resource<List<Story>> = coroutineScope {
         try {
             val storyIds = (api.getTopStories().execute().body() ?: emptyList()).map(::EntryId)
             val jobs = storyIds.map { id ->
@@ -31,24 +28,19 @@ class EntryRepositoryImpl(
                 }
             }
             val stories = jobs.awaitAll()
-            liveData.postValue(Success(stories.mapNotNull {
+            Success(stories.mapNotNull {
                 when (it) {
                     is Success -> it.response
                     else -> null
                 }
-            }))
+            })
         } catch (e: Throwable) {
-            liveData.postValue(Failure(e))
+            Failure<List<Story>>(e)
         }
-        liveData
     }
 
-    override suspend fun getStory(id: EntryId): LiveData<Resource<Story>> = coroutineScope {
-        val liveData = MutableLiveData<Resource<Story>>().also {
-            it.postValue(Loading())
-        }
-        liveData.postValue(withContext(Dispatchers.Default) { fetchStory(id) })
-        liveData
+    override suspend fun getStory(id: EntryId): Resource<Story> = coroutineScope {
+        withContext(Dispatchers.Default) { fetchStory(id) }
     }
 
     private suspend fun fetchStory(id: EntryId): Resource<Story> = coroutineScope {
