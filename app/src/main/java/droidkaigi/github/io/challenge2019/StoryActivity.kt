@@ -16,7 +16,7 @@ import android.webkit.WebViewClient
 import android.widget.ProgressBar
 import com.squareup.moshi.Types
 import droidkaigi.github.io.challenge2019.data.api.HackerNewsApi
-import droidkaigi.github.io.challenge2019.data.api.response.Item
+import droidkaigi.github.io.challenge2019.data.api.response.ItemResponse
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -38,13 +38,13 @@ class StoryActivity : BaseActivity() {
     private lateinit var commentAdapter: CommentAdapter
     private lateinit var hackerNewsApi: HackerNewsApi
 
-    private var getCommentsTask: AsyncTask<Long, Unit, List<Item?>>? = null
+    private var getCommentsTask: AsyncTask<Long, Unit, List<ItemResponse?>>? = null
     private var hideProgressTask: AsyncTask<Unit, Unit, Unit>? = null
-    private val itemJsonAdapter = moshi.adapter(Item::class.java)
+    private val itemJsonAdapter = moshi.adapter(ItemResponse::class.java)
     private val itemsJsonAdapter =
-        moshi.adapter<List<Item?>>(Types.newParameterizedType(List::class.java, Item::class.java))
+        moshi.adapter<List<ItemResponse?>>(Types.newParameterizedType(List::class.java, ItemResponse::class.java))
 
-    private var item: Item? = null
+    private var itemResponse: ItemResponse? = null
 
     override fun getContentView(): Int {
         return R.layout.activity_story
@@ -56,7 +56,7 @@ class StoryActivity : BaseActivity() {
         recyclerView = findViewById(R.id.comment_recycler)
         progressView = findViewById(R.id.progress)
 
-        item = intent.getStringExtra(EXTRA_ITEM_JSON)?.let {
+        itemResponse = intent.getStringExtra(EXTRA_ITEM_JSON)?.let {
             itemJsonAdapter.fromJson(it)
         }
 
@@ -70,7 +70,7 @@ class StoryActivity : BaseActivity() {
         commentAdapter = CommentAdapter(emptyList())
         recyclerView.adapter = commentAdapter
 
-        if (item == null) return
+        if (itemResponse == null) return
 
         val savedComments = savedInstanceState?.let { bundle ->
             bundle.getString(STATE_COMMENTS)?.let { itemsJson ->
@@ -81,7 +81,7 @@ class StoryActivity : BaseActivity() {
         if (savedComments != null) {
             commentAdapter.comments = savedComments
             commentAdapter.notifyDataSetChanged()
-            webView.loadUrl(item!!.url)
+            webView.loadUrl(itemResponse!!.url)
             return
         }
 
@@ -90,7 +90,7 @@ class StoryActivity : BaseActivity() {
     }
 
     private fun loadUrlAndComments() {
-        if (item == null) return
+        if (itemResponse == null) return
 
         val progressLatch = CountDownLatch(2)
 
@@ -121,22 +121,22 @@ class StoryActivity : BaseActivity() {
                 progressLatch.countDown()
             }
         }
-        webView.loadUrl(item!!.url)
+        webView.loadUrl(itemResponse!!.url)
 
-        getCommentsTask = @SuppressLint("StaticFieldLeak") object : AsyncTask<Long, Unit, List<Item?>>() {
-            override fun doInBackground(vararg itemIds: Long?): List<Item?> {
+        getCommentsTask = @SuppressLint("StaticFieldLeak") object : AsyncTask<Long, Unit, List<ItemResponse?>>() {
+            override fun doInBackground(vararg itemIds: Long?): List<ItemResponse?> {
                 val ids = itemIds.mapNotNull { it }
-                val itemMap = ConcurrentHashMap<Long, Item?>()
+                val itemMap = ConcurrentHashMap<Long, ItemResponse?>()
                 val latch = CountDownLatch(ids.size)
 
                 ids.forEach { id ->
-                    hackerNewsApi.getItem(id).enqueue(object : Callback<Item> {
-                        override fun onResponse(call: Call<Item>, response: Response<Item>) {
+                    hackerNewsApi.getItem(id).enqueue(object : Callback<ItemResponse> {
+                        override fun onResponse(call: Call<ItemResponse>, response: Response<ItemResponse>) {
                             response.body()?.let { item -> itemMap[id] = item }
                             latch.countDown()
                         }
 
-                        override fun onFailure(call: Call<Item>, t: Throwable) {
+                        override fun onFailure(call: Call<ItemResponse>, t: Throwable) {
                             latch.countDown()
                             showError(t)
                         }
@@ -152,14 +152,14 @@ class StoryActivity : BaseActivity() {
                 return ids.map { itemMap[it] }
             }
 
-            override fun onPostExecute(items: List<Item?>) {
+            override fun onPostExecute(items: List<ItemResponse?>) {
                 progressLatch.countDown()
                 commentAdapter.comments = items
                 commentAdapter.notifyDataSetChanged()
             }
         }
 
-        getCommentsTask?.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, *item!!.kids.toTypedArray())
+        getCommentsTask?.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, *itemResponse!!.kids.toTypedArray())
     }
 
     override fun onOptionsItemSelected(item: MenuItem?): Boolean {
@@ -171,7 +171,7 @@ class StoryActivity : BaseActivity() {
             }
             android.R.id.home -> {
                 val intent = Intent().apply {
-                    putExtra(READ_ARTICLE_ID, this@StoryActivity.item?.id)
+                    putExtra(READ_ARTICLE_ID, this@StoryActivity.itemResponse?.id)
                 }
                 setResult(Activity.RESULT_OK, intent)
                 finish()

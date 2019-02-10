@@ -11,13 +11,12 @@ import android.os.Bundle
 import android.support.v4.widget.SwipeRefreshLayout
 import android.support.v7.widget.DividerItemDecoration
 import android.support.v7.widget.RecyclerView
-import android.util.Log
 import android.view.MenuItem
 import android.view.View
 import android.widget.ProgressBar
 import com.squareup.moshi.Types
 import droidkaigi.github.io.challenge2019.data.api.HackerNewsApi
-import droidkaigi.github.io.challenge2019.data.api.response.Item
+import droidkaigi.github.io.challenge2019.data.api.response.ItemResponse
 import droidkaigi.github.io.challenge2019.data.db.ArticlePreferences
 import droidkaigi.github.io.challenge2019.data.db.ArticlePreferences.Companion.saveArticleIds
 import retrofit2.Call
@@ -39,10 +38,10 @@ class MainActivity : BaseActivity() {
     private lateinit var storyAdapter: StoryAdapter
     private lateinit var hackerNewsApi: HackerNewsApi
 
-    private var getStoriesTask: AsyncTask<Long, Unit, List<Item?>>? = null
-    private val itemJsonAdapter = moshi.adapter(Item::class.java)
+    private var getStoriesTask: AsyncTask<Long, Unit, List<ItemResponse?>>? = null
+    private val itemJsonAdapter = moshi.adapter(ItemResponse::class.java)
     private val itemsJsonAdapter =
-        moshi.adapter<List<Item?>>(Types.newParameterizedType(List::class.java, Item::class.java))
+        moshi.adapter<List<ItemResponse?>>(Types.newParameterizedType(List::class.java, ItemResponse::class.java))
 
 
     override fun getContentView(): Int {
@@ -77,8 +76,8 @@ class MainActivity : BaseActivity() {
                         clipboard.primaryClip = ClipData.newPlainText("url", item.url)
                     }
                     R.id.refresh -> {
-                        hackerNewsApi.getItem(item.id).enqueue(object : Callback<Item> {
-                            override fun onResponse(call: Call<Item>, response: Response<Item>) {
+                        hackerNewsApi.getItem(item.id).enqueue(object : Callback<ItemResponse> {
+                            override fun onResponse(call: Call<ItemResponse>, response: Response<ItemResponse>) {
                                 response.body()?.let { newItem ->
                                     val index = storyAdapter.stories.indexOf(item)
                                     if (index == -1 ) return
@@ -91,7 +90,7 @@ class MainActivity : BaseActivity() {
                                 }
                             }
 
-                            override fun onFailure(call: Call<Item>, t: Throwable) {
+                            override fun onFailure(call: Call<ItemResponse>, t: Throwable) {
                                 showError(t)
                             }
                         })
@@ -128,21 +127,25 @@ class MainActivity : BaseActivity() {
                 if (!response.isSuccessful) return
 
                 response.body()?.let { itemIds ->
-                    getStoriesTask = @SuppressLint("StaticFieldLeak") object : AsyncTask<Long, Unit, List<Item?>>() {
+                    getStoriesTask =
+                        @SuppressLint("StaticFieldLeak") object : AsyncTask<Long, Unit, List<ItemResponse?>>() {
 
-                        override fun doInBackground(vararg itemIds: Long?): List<Item?> {
+                            override fun doInBackground(vararg itemIds: Long?): List<ItemResponse?> {
                             val ids = itemIds.mapNotNull { it }
-                            val itemMap = ConcurrentHashMap<Long, Item?>()
+                                val itemMap = ConcurrentHashMap<Long, ItemResponse?>()
                             val latch = CountDownLatch(ids.size)
 
                             ids.forEach { id ->
-                                hackerNewsApi.getItem(id).enqueue(object : Callback<Item> {
-                                    override fun onResponse(call: Call<Item>, response: Response<Item>) {
+                                hackerNewsApi.getItem(id).enqueue(object : Callback<ItemResponse> {
+                                    override fun onResponse(
+                                        call: Call<ItemResponse>,
+                                        response: Response<ItemResponse>
+                                    ) {
                                         response.body()?.let { item -> itemMap[id] = item }
                                         latch.countDown()
                                     }
 
-                                    override fun onFailure(call: Call<Item>, t: Throwable) {
+                                    override fun onFailure(call: Call<ItemResponse>, t: Throwable) {
                                         showError(t)
                                         latch.countDown()
                                     }
@@ -159,7 +162,7 @@ class MainActivity : BaseActivity() {
                             return ids.map { itemMap[it] }
                         }
 
-                        override fun onPostExecute(items: List<Item?>) {
+                            override fun onPostExecute(items: List<ItemResponse?>) {
                             progressView.visibility = View.GONE
                             swipeRefreshLayout.isRefreshing = false
                             storyAdapter.stories = items.toMutableList()
