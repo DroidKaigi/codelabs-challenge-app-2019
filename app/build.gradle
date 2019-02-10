@@ -41,6 +41,6 @@ dependencies {
     testImplementation "org.jetbrains.kotlin:kotlin-test-annotations-common:${kotlin_version}"
     androidTestImplementation 'com.android.support.test:runner:1.0.2'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
-    implementation project(':data:api')
+    implementation project(':data:repository')
     implementation project(':model')
 }
