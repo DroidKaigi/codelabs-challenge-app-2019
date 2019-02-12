@@ -21,6 +21,9 @@ class StoriesViewModel(
         it.value = false
     }
     val isLoading: LiveData<Boolean> = _isLoading
+    val isFirstLoading: LiveData<Boolean> = Transformations.map(isLoading) { isLoading ->
+        isLoading && stories.value == null
+    }
     val stories: LiveData<Resource<List<Story>>> = Transformations.switchMap(isLoading) { isLoading ->
         val storiesData = MutableLiveData<Resource<List<Story>>>()
         if (isLoading) {
@@ -39,10 +42,6 @@ class StoriesViewModel(
 
     override val coroutineContext: CoroutineContext
         get() = Dispatchers.Main + job
-
-    init {
-
-    }
 
     override fun onCleared() {
         job.cancel()
